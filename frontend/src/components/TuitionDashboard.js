@@ -61,14 +61,11 @@ export default function TuitionDashboard() {
     }
   };
 
-  // Dependent Dropdowns Logic
-  // Filter classes based on schoolType
   const getFilteredClasses = () => {
     if (!schoolType) return [];
     return classList.filter(c => c.schoolType === schoolType);
   };
 
-  // When schoolType changes, reset class, section, student
   const handleSchoolTypeChange = (e) => {
     setSchoolType(e.target.value);
     setSelectedClass('');
@@ -79,7 +76,6 @@ export default function TuitionDashboard() {
     resetStudentForm();
   };
 
-  // When class changes, update section options
   const handleClassChange = (e) => {
     const className = e.target.value;
     setSelectedClass(className);
@@ -92,7 +88,6 @@ export default function TuitionDashboard() {
     setSectionList(config ? config.sections : []);
   };
 
-  // When section changes, fetch students
   const handleSectionChange = async (e) => {
     const sect = e.target.value;
     setSelectedSection(sect);
@@ -109,7 +104,6 @@ export default function TuitionDashboard() {
     }
   };
 
-  // When student is selected, fetch their detailed tuition log
   const handleStudentChange = async (e) => {
     const stuId = e.target.value;
     setSelectedStudentId(stuId);
@@ -122,8 +116,6 @@ export default function TuitionDashboard() {
       const tuitionRec = await api.get(`/fees/tuition/student/${stuId}`);
       setStudentDetails(tuitionRec.student);
       setFeeDetails(tuitionRec);
-      
-      // Pre-fill inputs from record
       setDiscount(tuitionRec.discount || 0);
       setFine(tuitionRec.fine || 0);
     } catch (err) {
@@ -146,7 +138,6 @@ export default function TuitionDashboard() {
     setLastPayment(null);
   };
 
-  // Real-time calculations
   const calculateTotalAmount = () => {
     if (!feeDetails) return 0;
     return feeDetails.feeAmount - Number(discount) + Number(fine);
@@ -187,12 +178,10 @@ export default function TuitionDashboard() {
         transactionRef
       });
 
-      setSuccessMsg('Payment successfully clearing! Student clearance workflow updated.');
+      setSuccessMsg('Payment clearances processed successfully! Student workflow forwarded to Book Department.');
       setLastPayment(result.payment);
       
-      // Refresh statistics and active student display
       fetchStats();
-      // Re-trigger student fetch to update balance values in form
       const updatedTuition = await api.get(`/fees/tuition/student/${selectedStudentId}`);
       setFeeDetails(updatedTuition);
       setAmountPaidInput('');
@@ -287,18 +276,18 @@ export default function TuitionDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Tuition Fee Clearance Portal</h2>
-          <p className="text-xs text-slate-500">Accounts collection dashboard &amp; sequential student clearance billing</p>
+          <h2 className="text-xl font-extrabold text-slate-900 leading-tight">Tuition Fee clearances</h2>
+          <p className="text-xs text-slate-500">Collect fee collections and route students sequentially in clearance paths</p>
         </div>
-        <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-          <Receipt className="h-6 w-6" />
+        <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+          <Receipt className="h-5 w-5 animate-pulse" />
         </div>
       </div>
 
       {/* ========================================== */}
-      {/* 1. METRICS CARDS */}
+      {/* 1. METRICS */}
       {/* ========================================== */}
       {statsLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -309,136 +298,109 @@ export default function TuitionDashboard() {
       ) : (
         stats && (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Students</p>
-                <p className="text-lg font-bold text-slate-800">{stats.totalStudents}</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-                <CheckCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fully Paid</p>
-                <p className="text-lg font-bold text-slate-800">{stats.paidStudents}</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Pending Paid</p>
-                <p className="text-lg font-bold text-slate-800">{stats.pendingStudents}</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3 col-span-1">
-              <div className="p-2 bg-teal-50 text-teal-600 rounded-xl">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Collected Amt</p>
-                <p className="text-lg font-bold text-slate-800">₹{stats.collectedAmount.toLocaleString('en-IN')}</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3 col-span-1">
-              <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-                <ShieldAlert className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Outstanding</p>
-                <p className="text-lg font-bold text-slate-800">₹{stats.pendingAmount.toLocaleString('en-IN')}</p>
-              </div>
-            </div>
-
+            {[
+              { label: 'Total students', val: stats.totalStudents, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50/80 border-indigo-100/50' },
+              { label: 'Fully Paid', val: stats.paidStudents, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50/80 border-emerald-100/50' },
+              { label: 'Pending Collections', val: stats.pendingStudents, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50/80 border-amber-100/50' },
+              { label: 'Collected amount', val: `₹${stats.collectedAmount.toLocaleString('en-IN')}`, icon: TrendingUp, color: 'text-teal-600', bg: 'bg-teal-50/80 border-teal-100/50' },
+              { label: 'Outstanding debts', val: `₹${stats.pendingAmount.toLocaleString('en-IN')}`, icon: ShieldAlert, color: 'text-rose-600', bg: 'bg-rose-50/80 border-rose-100/50' }
+            ].map((c, i) => {
+              const Icon = c.icon;
+              return (
+                <div key={i} className="bg-white p-4.5 rounded-2xl border border-slate-200/60 shadow-premium hover-lift">
+                  <div className="flex items-center space-x-3.5">
+                    <div className={`p-2.5 rounded-xl border shrink-0 ${c.bg} ${c.color}`}>
+                      <Icon className="h-4.5 w-4.5" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{c.label}</p>
+                      <p className="text-base font-extrabold text-slate-800 mt-1.5 leading-none">{c.val}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )
       )}
 
       {/* ========================================== */}
-      {/* 2. PAYMENT COLLECT FORM */}
+      {/* 2. COLLECTION FORM */}
       {/* ========================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Dropdowns Selection Panel */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 mb-2">
+        {/* Selector Panel */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-4.5">
+          <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 uppercase tracking-wider">
             Student Selector
           </h3>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">School Type</label>
-            <select
-              value={schoolType}
-              onChange={handleSchoolTypeChange}
-              className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all cursor-pointer"
-            >
-              <option value="">-- Select schoolType --</option>
-              <option value="CBSE">CBSE (Central Board)</option>
-              <option value="ICSE">ICSE (Indian Certificate)</option>
-            </select>
-          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">School Board</label>
+              <select
+                value={schoolType}
+                onChange={handleSchoolTypeChange}
+                className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-600 rounded-xl px-3 py-2 text-xs text-slate-800 transition-all cursor-pointer"
+              >
+                <option value="">-- Select schoolType --</option>
+                <option value="CBSE">CBSE (Central Board)</option>
+                <option value="ICSE">ICSE (Indian Certificate)</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">Class</label>
-            <select
-              value={selectedClass}
-              onChange={handleClassChange}
-              disabled={!schoolType}
-              className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all disabled:opacity-50 cursor-pointer"
-            >
-              <option value="">-- Select Class --</option>
-              {getFilteredClasses().map(c => (
-                <option key={c._id} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Class</label>
+              <select
+                value={selectedClass}
+                onChange={handleClassChange}
+                disabled={!schoolType}
+                className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-600 rounded-xl px-3 py-2 text-xs text-slate-800 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <option value="">-- Select Class --</option>
+                {getFilteredClasses().map(c => (
+                  <option key={c._id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">Section</label>
-            <select
-              value={selectedSection}
-              onChange={handleSectionChange}
-              disabled={!selectedClass}
-              className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all disabled:opacity-50 cursor-pointer"
-            >
-              <option value="">-- Select Section --</option>
-              {sectionList.map((s, idx) => (
-                <option key={idx} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Section</label>
+              <select
+                value={selectedSection}
+                onChange={handleSectionChange}
+                disabled={!selectedClass}
+                className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-600 rounded-xl px-3 py-2 text-xs text-slate-800 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <option value="">-- Select Section --</option>
+                {sectionList.map((s, idx) => (
+                  <option key={idx} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">Student Name</label>
-            <select
-              value={selectedStudentId}
-              onChange={handleStudentChange}
-              disabled={!selectedSection}
-              className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all disabled:opacity-50 cursor-pointer"
-            >
-              <option value="">-- Select Student --</option>
-              {studentList.map(stu => (
-                <option key={stu._id} value={stu._id}>
-                  {stu.name} (Roll: {stu.rollNumber})
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Student Name</label>
+              <select
+                value={selectedStudentId}
+                onChange={handleStudentChange}
+                disabled={!selectedSection}
+                className="block w-full border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-600 rounded-xl px-3 py-2 text-xs text-slate-800 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <option value="">-- Select Student --</option>
+                {studentList.map(stu => (
+                  <option key={stu._id} value={stu._id}>
+                    {stu.name} (Roll: {stu.rollNumber})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Payment and Auto details Form */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+        {/* Payment Billing Form */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium">
+          <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">
             Tuition Clearance Billing Form
           </h3>
 
@@ -447,99 +409,99 @@ export default function TuitionDashboard() {
               <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
             </div>
           ) : !studentDetails ? (
-            <div className="h-64 border-2 border-dashed border-slate-200 rounded-xl flex flex-col justify-center items-center text-center p-4">
-              <Receipt className="h-10 w-10 text-slate-300 mb-2" />
-              <p className="text-xs text-slate-500">Select a student from the left panel to fetch tuition structures and record payments.</p>
+            <div className="h-64 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col justify-center items-center text-center p-4">
+              <Receipt className="h-10 w-10 text-slate-300 mb-2.5" />
+              <p className="text-xs text-slate-400 font-semibold">Select a student from the left panel to fetch tuition structures and record payments.</p>
             </div>
           ) : (
             <form onSubmit={handleCollectPayment} className="space-y-5">
               
-              {/* Auto Fetched Student info */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+              {/* Metadata Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4.5 border border-slate-100 rounded-xl text-xs">
                 <div>
-                  <span className="block font-medium text-slate-400">Student ID</span>
-                  <span className="font-semibold text-slate-800">{studentDetails.studentId}</span>
+                  <span className="block font-bold text-slate-400 mb-0.5 uppercase text-[9px] tracking-wider">Student ID</span>
+                  <span className="font-bold text-slate-800">{studentDetails.studentId}</span>
                 </div>
                 <div>
-                  <span className="block font-medium text-slate-400">Admission No</span>
-                  <span className="font-semibold text-slate-800">{studentDetails.admissionNumber}</span>
+                  <span className="block font-bold text-slate-400 mb-0.5 uppercase text-[9px] tracking-wider">Admission No</span>
+                  <span className="font-bold text-slate-800">{studentDetails.admissionNumber}</span>
                 </div>
                 <div>
-                  <span className="block font-medium text-slate-400">Roll / Section</span>
-                  <span className="font-semibold text-slate-800">{studentDetails.rollNumber} / {studentDetails.section}</span>
+                  <span className="block font-bold text-slate-400 mb-0.5 uppercase text-[9px] tracking-wider">Roll / Section</span>
+                  <span className="font-bold text-slate-800">{studentDetails.rollNumber} / {studentDetails.section}</span>
                 </div>
                 <div>
-                  <span className="block font-medium text-slate-400">Parents Mob</span>
-                  <span className="font-semibold text-slate-800">{studentDetails.parentMobile}</span>
+                  <span className="block font-bold text-slate-400 mb-0.5 uppercase text-[9px] tracking-wider">Parents Mob</span>
+                  <span className="font-bold text-slate-800">{studentDetails.parentMobile}</span>
                 </div>
               </div>
 
-              {/* Status Header */}
-              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                <span className="text-xs font-bold text-slate-800">Clearance Status:</span>
-                <span className={`text-[10px] font-bold border px-2.5 py-0.5 rounded-full uppercase ${
+              {/* Status banner */}
+              <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                <span className="font-bold text-slate-800 uppercase tracking-wide">Clearance Status:</span>
+                <span className={`text-[9px] font-bold border px-3 py-0.5 rounded-full uppercase tracking-wider ${
                   feeDetails.status === 'Paid'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                     : feeDetails.status === 'Partial'
-                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                      : 'bg-amber-50 border-amber-200 text-amber-700'
                 }`}>
                   {feeDetails.status}
                 </span>
               </div>
 
-              {/* Fee and Inputs Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 
-                {/* Fixed Details Column */}
+                {/* Fixed Fees Info Column */}
                 <div className="space-y-3.5 text-xs">
-                  <div className="flex justify-between border-b border-slate-50 pb-1.5">
-                    <span className="text-slate-500">Annual Tuition Fee:</span>
-                    <span className="font-semibold text-slate-800">₹{feeDetails.feeAmount.toLocaleString()}</span>
+                  <div className="flex justify-between border-b border-slate-50 pb-2">
+                    <span className="text-slate-500 font-semibold">Annual Course Fee:</span>
+                    <span className="font-bold text-slate-850">₹{feeDetails.feeAmount.toLocaleString()}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <label className="text-slate-500">Authorized Discount (₹):</label>
+                    <label className="text-slate-500 font-semibold">Authorized Discount (₹):</label>
                     <input
                       type="number"
                       value={discount}
                       disabled={feeDetails.status === 'Paid'}
                       onChange={(e) => setDiscount(Math.max(0, Number(e.target.value)))}
-                      className="w-24 border border-slate-200 rounded-lg px-2 py-1 text-right focus:outline-none focus:border-indigo-600 disabled:opacity-50"
+                      className="w-24 border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-right focus:outline-none focus:border-indigo-600 disabled:opacity-50"
                     />
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <label className="text-slate-500">Fines / Additions (₹):</label>
+                    <label className="text-slate-500 font-semibold">Fines / Additions (₹):</label>
                     <input
                       type="number"
                       value={fine}
                       disabled={feeDetails.status === 'Paid'}
                       onChange={(e) => setFine(Math.max(0, Number(e.target.value)))}
-                      className="w-24 border border-slate-200 rounded-lg px-2 py-1 text-right focus:outline-none focus:border-indigo-600 disabled:opacity-50"
+                      className="w-24 border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-right focus:outline-none focus:border-indigo-600 disabled:opacity-50"
                     />
                   </div>
 
-                  <div className="flex justify-between font-bold border-t border-slate-200 pt-2 text-slate-800">
-                    <span>Adjusted Total:</span>
+                  <div className="flex justify-between font-bold border-t border-slate-250 pt-2 text-slate-800">
+                    <span>Adjusted Total Amount:</span>
                     <span>₹{calculateTotalAmount().toLocaleString()}</span>
                   </div>
 
-                  <div className="flex justify-between text-slate-500">
+                  <div className="flex justify-between text-slate-500 font-medium">
                     <span>Previously Paid:</span>
-                    <span className="font-medium text-slate-700">₹{feeDetails.amountPaid.toLocaleString()}</span>
+                    <span className="text-slate-700">₹{feeDetails.amountPaid.toLocaleString()}</span>
                   </div>
 
-                  <div className="flex justify-between font-bold border-t border-dashed border-slate-200 pt-2 text-indigo-700">
+                  <div className="flex justify-between font-extrabold border-t border-dashed border-slate-250 pt-2 text-indigo-700">
                     <span>Outstanding Balance:</span>
                     <span>₹{(calculateTotalAmount() - feeDetails.amountPaid).toLocaleString()}</span>
                   </div>
                 </div>
 
-                {/* Entry Inputs Column */}
-                <div className="space-y-4 bg-slate-50/50 p-4 rounded-xl border border-slate-200/50">
+                {/* Amount collecting Column */}
+                <div className="space-y-4 bg-slate-50 p-4.5 border border-slate-200/60 rounded-2xl text-xs">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">PAYMENT AMOUNT (₹)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Payment Amount (₹)</label>
                     <input
                       type="number"
                       required
@@ -547,62 +509,62 @@ export default function TuitionDashboard() {
                       value={amountPaidInput}
                       disabled={feeDetails.status === 'Paid'}
                       onChange={(e) => setAmountPaidInput(e.target.value)}
-                      className="block w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:opacity-50"
+                      className="block w-full border border-slate-200 bg-white rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-none focus:border-indigo-600 disabled:opacity-50"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">PAYMENT METHOD</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Payment Method</label>
                     <select
                       value={paymentMethod}
                       disabled={feeDetails.status === 'Paid'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="block w-full border border-slate-200 bg-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:opacity-50 cursor-pointer"
+                      className="block w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer disabled:opacity-50"
                     >
-                      <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                      <option value="UPI">UPI (GPay/PhonePe)</option>
                       <option value="Cash">Cash Handover</option>
                       <option value="Card">Card Terminal Swipe</option>
-                      <option value="NetBanking">Net Banking Transfer</option>
+                      <option value="NetBanking">Net Banking</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">TRANSACTION REF (OPTIONAL)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Transaction Reference</label>
                     <input
                       type="text"
-                      placeholder="e.g. UPI ID or Check Ref"
+                      placeholder="e.g. Txn ID or UPI Ref"
                       value={transactionRef}
                       disabled={feeDetails.status === 'Paid'}
                       onChange={(e) => setTransactionRef(e.target.value)}
-                      className="block w-full border border-slate-200 bg-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:opacity-50"
+                      className="block w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none disabled:opacity-50"
                     />
                   </div>
                 </div>
 
               </div>
 
-              {/* Status Preview */}
+              {/* Balance preview */}
               {feeDetails.status !== 'Paid' && amountPaidInput !== '' && (
-                <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100 flex justify-between items-center text-xs">
-                  <span className="font-medium text-slate-500">Remaining Balance After Payment:</span>
+                <div className="bg-indigo-50/50 border border-indigo-200/50 rounded-xl p-3.5 flex justify-between items-center text-xs">
+                  <span className="font-semibold text-slate-500">Remaining Balance After Payment:</span>
                   <span className="font-bold text-indigo-700">₹{calculateNewBalance().toLocaleString()}</span>
                 </div>
               )}
 
-              {/* Action Buttons */}
+              {/* Collect Action */}
               <div className="border-t border-slate-100 pt-4 flex flex-col space-y-3">
                 {errorMsg && (
-                  <p className="text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-lg border border-red-200">{errorMsg}</p>
+                  <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2.5 border border-rose-200 rounded-lg">{errorMsg}</p>
                 )}
 
                 {successMsg && (
-                  <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-emerald-800 text-xs flex justify-between items-center">
-                    <span className="font-medium">{successMsg}</span>
+                  <div className="bg-emerald-50 border border-emerald-250 p-4 rounded-2xl text-emerald-800 text-xs flex justify-between items-center">
+                    <span className="font-bold">{successMsg}</span>
                     {lastPayment && (
                       <button
                         type="button"
                         onClick={handlePrintReceipt}
-                        className="inline-flex items-center space-x-1 font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 border border-emerald-300 px-2 py-1.5 rounded-lg cursor-pointer"
+                        className="inline-flex items-center space-x-1.5 font-bold text-emerald-700 hover:text-emerald-950 bg-emerald-100 border border-emerald-300 px-3 py-2 rounded-xl transition-all cursor-pointer"
                       >
                         <FileDown className="h-4 w-4" />
                         <span>Print Receipt</span>
@@ -615,12 +577,12 @@ export default function TuitionDashboard() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors cursor-pointer"
+                    className="w-full flex justify-center py-3 px-4 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none transition-colors shadow-md cursor-pointer hover:scale-[1.01]"
                   >
                     {submitting ? (
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      <Loader2 className="h-4.5 w-4.5 animate-spin mr-2" />
                     ) : (
-                      'Collect Payment & Submit Clearance'
+                      'Record Payment & Forward Clearance'
                     )}
                   </button>
                 )}

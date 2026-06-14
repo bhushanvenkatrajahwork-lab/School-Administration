@@ -5,7 +5,8 @@ import { api } from '../utils/api';
 import { 
   Users, CheckCircle, Clock, ShieldAlert, Receipt, BookOpen, Shirt, Plus, 
   Search, Trash2, Edit3, UserCheck, Shield, ChevronRight, HelpCircle, 
-  Settings, Loader2, Download, ToggleLeft, ToggleRight, Info, Eye
+  Settings, Loader2, Download, ToggleLeft, ToggleRight, Info, Eye,
+  Building, Library, FolderKanban, Check, X, AlertCircle, FileSpreadsheet
 } from 'lucide-react';
 
 export default function AdminDashboard({ onOpenStudentHistory }) {
@@ -143,7 +144,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // Report export handler
   const handleExportCSV = async (type) => {
     try {
       await api.download(`/reports/export/csv?type=${type}`, `${type}_clearance_report.csv`);
@@ -152,7 +152,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // User status toggler
   const handleToggleUser = async (id) => {
     try {
       await api.put(`/auth/users/${id}/toggle`);
@@ -162,7 +161,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // User Creator
   const handleAddUserSubmit = async (e) => {
     e.preventDefault();
     setUserFormError('');
@@ -176,7 +174,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // Student Creator
   const handleAddStudentSubmit = async (e) => {
     e.preventDefault();
     setStudentFormError('');
@@ -196,7 +193,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // Class creator
   const handleAddClassSubmit = async (e) => {
     e.preventDefault();
     setClassFormError('');
@@ -215,7 +211,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // Books Config creator
   const handleAddBookConfigSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -233,7 +228,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // Uniform Config creator
   const handleAddUniformConfigSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -250,7 +244,6 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
     }
   };
 
-  // Bulk Student Importer
   const handleBulkImportSubmit = async (e) => {
     e.preventDefault();
     setBulkError('');
@@ -285,23 +278,23 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
   return (
     <div className="space-y-6">
       
-      {/* Super Admin Tab Nav links */}
-      <div className="flex flex-wrap border-b border-slate-200 gap-2">
+      {/* Sub tabs navigation */}
+      <div className="flex flex-wrap border-b border-slate-200/80 gap-2">
         {[
           { id: 'overview', label: 'Overview Metrics' },
-          { id: 'students', label: 'Students Directory' },
-          { id: 'configs', label: 'School & Inventory' },
+          { id: 'students', label: 'Student Directory' },
+          { id: 'configs', label: 'School & Catalog' },
           { id: 'reports', label: 'Analytics Reports' },
-          { id: 'users', label: 'Staff Accounts' },
-          { id: 'audit', label: 'Audit Timeline' }
+          { id: 'users', label: 'Staff Directory' },
+          { id: 'audit', label: 'Security Audits' }
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id)}
-            className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all cursor-pointer ${
+            className={`px-4.5 py-3 text-xs font-bold rounded-t-2xl transition-all cursor-pointer ${
               activeSubTab === tab.id
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-white border-t border-x border-slate-200/60 text-slate-600 hover:bg-slate-50'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
+                : 'bg-white border-t border-x border-slate-200/50 text-slate-500 hover:text-slate-900 hover:bg-slate-50/50'
             }`}
           >
             {tab.label}
@@ -310,7 +303,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
       </div>
 
       {/* ========================================== */}
-      {/* 1. OVERVIEW DASHBOARD TAB */}
+      {/* 1. OVERVIEW DASHBOARD */}
       {/* ========================================== */}
       {activeSubTab === 'overview' && (
         <div className="space-y-6">
@@ -323,163 +316,123 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
           ) : (
             stats && (
               <>
-                {/* Metric Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/85 shadow-sm flex items-center space-x-4">
-                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                      <Users className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Student Enrolled</p>
-                      <p className="text-xl font-bold text-slate-800">{stats.metrics.totalStudents}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/85 shadow-sm flex items-center space-x-4">
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                      <CheckCircle className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fees Collected</p>
-                      <p className="text-xl font-bold text-slate-800">₹{stats.metrics.totalCollected.toLocaleString('en-IN')}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/85 shadow-sm flex items-center space-x-4">
-                    <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
-                      <ShieldAlert className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Pending Balance</p>
-                      <p className="text-xl font-bold text-slate-800">₹{stats.metrics.totalPending.toLocaleString('en-IN')}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/85 shadow-sm flex items-center space-x-4">
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                      <CheckCircle className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Completed Clearance</p>
-                      <p className="text-xl font-bold text-slate-800">{stats.workflowProgress.completed}</p>
-                    </div>
-                  </div>
+                {/* Metrics row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {[
+                    { label: 'Student Enrolled', value: stats.metrics.totalStudents, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50/80 border-indigo-100/50' },
+                    { label: 'Fees Collected', value: `₹${stats.metrics.totalCollected.toLocaleString('en-IN')}`, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50/80 border-emerald-100/50' },
+                    { label: 'Pending Balance', value: `₹${stats.metrics.totalPending.toLocaleString('en-IN')}`, icon: ShieldAlert, color: 'text-rose-600', bg: 'bg-rose-50/80 border-rose-100/50' },
+                    { label: 'Clearances Issued', value: stats.workflowProgress.completed, icon: UserCheck, color: 'text-teal-600', bg: 'bg-teal-50/80 border-teal-100/50' }
+                  ].map((card, idx) => {
+                    const Icon = card.icon;
+                    return (
+                      <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-premium hover-lift">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{card.label}</p>
+                            <p className="text-xl font-extrabold text-slate-800 mt-1.5">{card.value}</p>
+                          </div>
+                          <div className={`p-2.5 rounded-xl border ${card.bg} ${card.color}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* Collection breakdown and Pipeline progress grid */}
+                {/* Progress pipeline and ratios */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
-                  {/* Financial Collection Ratios */}
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm col-span-1">
-                    <h3 className="text-xs font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">
-                      Departmental Collections
+                  {/* Collections breakdown */}
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium">
+                    <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 uppercase tracking-wider">
+                      Department collections
                     </h3>
-                    <div className="space-y-4">
-                      
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="font-semibold text-slate-600">Tuition Fees</span>
-                          <span className="font-bold text-slate-800">₹{stats.metrics.tuitionCollected.toLocaleString()}</span>
+                    <div className="space-y-4.5">
+                      {[
+                        { label: 'Tuition collections', value: stats.metrics.tuitionCollected, color: 'bg-indigo-600', text: 'text-indigo-600' },
+                        { label: 'Book collections', value: stats.metrics.bookCollected, color: 'bg-amber-500', text: 'text-amber-600' },
+                        { label: 'Uniform collections', value: stats.metrics.uniformCollected, color: 'bg-rose-500', text: 'text-rose-600' }
+                      ].map((item, idx) => (
+                        <div key={idx}>
+                          <div className="flex justify-between text-xs mb-1.5">
+                            <span className="font-semibold text-slate-500">{item.label}</span>
+                            <span className="font-bold text-slate-900">₹{item.value.toLocaleString()}</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${item.color}`} style={{ width: `${stats.metrics.totalCollected > 0 ? (item.value / stats.metrics.totalCollected) * 100 : 0}%` }} />
+                          </div>
                         </div>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="bg-indigo-600 h-full" style={{ width: `${stats.metrics.totalCollected > 0 ? (stats.metrics.tuitionCollected / stats.metrics.totalCollected) * 100 : 0}%` }} />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="font-semibold text-slate-600">Book Fees</span>
-                          <span className="font-bold text-slate-800">₹{stats.metrics.bookCollected.toLocaleString()}</span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="bg-amber-500 h-full" style={{ width: `${stats.metrics.totalCollected > 0 ? (stats.metrics.bookCollected / stats.metrics.totalCollected) * 100 : 0}%` }} />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="font-semibold text-slate-600">Uniform Fees</span>
-                          <span className="font-bold text-slate-800">₹{stats.metrics.uniformCollected.toLocaleString()}</span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="bg-rose-500 h-full" style={{ width: `${stats.metrics.totalCollected > 0 ? (stats.metrics.uniformCollected / stats.metrics.totalCollected) * 100 : 0}%` }} />
-                        </div>
-                      </div>
-
+                      ))}
                     </div>
                   </div>
 
                   {/* Flow pipeline progress */}
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm col-span-2">
-                    <h3 className="text-xs font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium lg:col-span-2">
+                    <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 uppercase tracking-wider">
                       Clearance Workflow Pipeline Progression
                     </h3>
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-150">
-                        <p className="text-xs text-slate-500 font-semibold mb-1">Tuition Queue</p>
-                        <p className="text-lg font-bold text-slate-850">{stats.workflowProgress.tuitionPending}</p>
-                        <span className="inline-block text-[9px] bg-amber-50 border border-amber-200 text-amber-600 px-1.5 py-0.5 rounded-full mt-1.5">Active</span>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-150">
-                        <p className="text-xs text-slate-500 font-semibold mb-1">Book Queue</p>
-                        <p className="text-lg font-bold text-slate-850">{stats.workflowProgress.booksPending}</p>
-                        <span className="inline-block text-[9px] bg-amber-50 border border-amber-200 text-amber-600 px-1.5 py-0.5 rounded-full mt-1.5">Active</span>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-150">
-                        <p className="text-xs text-slate-500 font-semibold mb-1">Uniform Queue</p>
-                        <p className="text-lg font-bold text-slate-850">{stats.workflowProgress.uniformPending}</p>
-                        <span className="inline-block text-[9px] bg-amber-50 border border-amber-200 text-amber-600 px-1.5 py-0.5 rounded-full mt-1.5">Active</span>
-                      </div>
-                      <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20">
-                        <p className="text-xs text-emerald-700 font-semibold mb-1">Completed</p>
-                        <p className="text-lg font-bold text-emerald-800">{stats.workflowProgress.completed}</p>
-                        <span className="inline-block text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full mt-1.5 font-bold">Finished</span>
-                      </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { label: 'Tuition Queue', val: stats.workflowProgress.tuitionPending, bg: 'bg-indigo-50/50 text-indigo-700 border-indigo-200/40', badge: 'bg-indigo-100 border-indigo-200 text-indigo-700' },
+                        { label: 'Book Queue', val: stats.workflowProgress.booksPending, bg: 'bg-amber-50/50 text-amber-700 border-amber-200/40', badge: 'bg-amber-100 border-amber-200 text-amber-700' },
+                        { label: 'Uniform Queue', val: stats.workflowProgress.uniformPending, bg: 'bg-rose-50/50 text-rose-700 border-rose-200/40', badge: 'bg-rose-100 border-rose-200 text-rose-700' },
+                        { label: 'Completed', val: stats.workflowProgress.completed, bg: 'bg-emerald-50 text-emerald-800 border-emerald-200/60', badge: 'bg-emerald-500 text-white font-bold' }
+                      ].map((p, idx) => (
+                        <div key={idx} className={`p-4 rounded-2xl border ${p.bg} flex flex-col justify-between text-center`}>
+                          <p className="text-xs font-bold text-slate-500 mb-1">{p.label}</p>
+                          <p className="text-xl font-extrabold mt-1">{p.val}</p>
+                          <span className={`inline-block text-[8px] font-bold uppercase tracking-wider border px-2 py-0.5 rounded-full mt-2 mx-auto ${p.badge}`}>
+                            {idx === 3 ? 'Archived' : 'Active'}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
                 </div>
 
-                {/* Recent Transactions & Recent Activities lists */}
+                {/* Ledger & Activities grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
-                  {/* Recent Transactions list */}
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <h3 className="text-xs font-bold text-slate-800 border-b border-slate-100 pb-3 mb-3 uppercase tracking-wider">
+                  {/* Ledger */}
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium">
+                    <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">
                       Recent Cash Ledger Transactions
                     </h3>
                     {stats.recentTransactions?.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-3 text-center">No payment transactions recorded.</p>
+                      <p className="text-xs text-slate-400 py-6 text-center">No payment transactions recorded.</p>
                     ) : (
                       <div className="divide-y divide-slate-100">
                         {stats.recentTransactions?.map(tx => (
-                          <div key={tx._id} className="py-2.5 flex items-center justify-between text-xs">
+                          <div key={tx._id} className="py-3 flex items-center justify-between text-xs">
                             <div>
-                              <p className="font-semibold text-slate-900">{tx.student?.name}</p>
-                              <p className="text-[10px] text-slate-400">{tx.receiptNumber} | {tx.feeType} Fee | Method: {tx.paymentMethod}</p>
+                              <p className="font-bold text-slate-800">{tx.student?.name}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">Receipt: {tx.receiptNumber} | {tx.feeType} | Method: {tx.paymentMethod}</p>
                             </div>
-                            <span className="font-bold text-slate-850">₹{tx.amount.toLocaleString()}</span>
+                            <span className="font-extrabold text-slate-900 bg-slate-50 px-2.5 py-1 border border-slate-150 rounded-lg">₹{tx.amount.toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Recent Activities logs */}
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <h3 className="text-xs font-bold text-slate-800 border-b border-slate-100 pb-3 mb-3 uppercase tracking-wider">
+                  {/* Audit Logs */}
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium">
+                    <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">
                       Recent System Audit Activity Trail
                     </h3>
                     {stats.recentActivities?.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-3 text-center">No recent audit trails.</p>
+                      <p className="text-xs text-slate-400 py-6 text-center">No recent audit trails.</p>
                     ) : (
-                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                      <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
                         {stats.recentActivities?.map(act => (
-                          <div key={act._id} className="text-xs flex items-start space-x-2">
-                            <div className="h-2 w-2 bg-indigo-500 rounded-full mt-1.5 shrink-0" />
-                            <div>
-                              <p className="text-slate-800 font-semibold leading-tight">{act.details}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">Actor: {act.user} | {new Date(act.createdAt).toLocaleString()}</p>
+                          <div key={act._id} className="text-xs flex items-start space-x-2.5">
+                            <div className="h-2 w-2 bg-indigo-500 rounded-full mt-1.5 shrink-0 shadow-sm" />
+                            <div className="flex-1">
+                              <p className="text-slate-700 font-semibold leading-relaxed">{act.details}</p>
+                              <p className="text-[9px] text-slate-400 mt-0.5">Actor: {act.user} | {new Date(act.createdAt).toLocaleString()}</p>
                             </div>
                           </div>
                         ))}
@@ -495,37 +448,35 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
       )}
 
       {/* ========================================== */}
-      {/* 2. STUDENTS DIRECTORY TAB */}
+      {/* 2. STUDENTS DIRECTORY */}
       {/* ========================================== */}
       {activeSubTab === 'students' && (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-5">
             
             {/* Toolbar header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-sm font-bold text-slate-800">Student Enrolled Registries</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Manage student admissions and clearance states</p>
+                <h3 className="text-sm font-bold text-slate-800">Student Directory Registry</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Admit new students and monitor clearance status directories</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setShowAddStudent(true)}
-                  className="inline-flex items-center space-x-1 font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3.5 py-2 rounded-xl text-xs shadow-md shadow-indigo-600/15 cursor-pointer"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Manual Registration</span>
-                </button>
-              </div>
+              <button
+                onClick={() => setShowAddStudent(true)}
+                className="inline-flex items-center space-x-1.5 font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 rounded-xl text-xs shadow-lg shadow-indigo-600/15 cursor-pointer hover:scale-[1.01] transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Register Student</span>
+              </button>
             </div>
 
-            {/* Filter bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-3.5 border border-slate-150 rounded-xl">
+            {/* Filter toolbar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 border border-slate-150 rounded-2xl text-xs">
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 mb-1">SCHOOL BOARD</label>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">School Board</label>
                 <select
                   value={filterSchoolType}
                   onChange={(e) => setFilterSchoolType(e.target.value)}
-                  className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
+                  className="block w-full border border-slate-250 bg-white rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
                 >
                   <option value="">All Boards</option>
                   <option value="CBSE">CBSE</option>
@@ -533,36 +484,36 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 mb-1">CLASS</label>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Class</label>
                 <input
                   type="text"
-                  placeholder="e.g. Class 10 or Class X"
+                  placeholder="e.g. Class 10"
                   value={filterClass}
                   onChange={(e) => setFilterClass(e.target.value)}
-                  className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-600 text-xs"
+                  className="block w-full border border-slate-250 bg-white rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-indigo-600 text-slate-800"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 mb-1">SECTION</label>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Section</label>
                 <input
                   type="text"
-                  placeholder="e.g. A or B"
+                  placeholder="e.g. A"
                   value={filterSection}
                   onChange={(e) => setFilterSection(e.target.value)}
-                  className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-600 text-xs"
+                  className="block w-full border border-slate-250 bg-white rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-indigo-600 text-slate-800"
                 />
               </div>
               <div className="flex items-end">
                 <button
                   onClick={() => { setFilterSchoolType(''); setFilterClass(''); setFilterSection(''); }}
-                  className="w-full py-1.5 text-center text-xs font-semibold text-slate-600 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                  className="w-full py-1.5 text-center text-xs font-bold text-slate-600 bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
                 >
                   Clear Filters
                 </button>
               </div>
             </div>
 
-            {/* Students Table */}
+            {/* Directory table */}
             {studentsLoading ? (
               <div className="h-48 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-600"></div>
@@ -573,28 +524,34 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-xs divide-y divide-slate-200">
                   <thead>
-                    <tr className="bg-slate-50/50 text-slate-400 font-semibold">
-                      <th className="py-2.5 px-3">Student ID</th>
-                      <th className="py-2.5 px-3">Name</th>
-                      <th className="py-2.5 px-3">Admission No</th>
-                      <th className="py-2.5 px-3">Roll No</th>
-                      <th className="py-2.5 px-3">Class-Sec</th>
-                      <th className="py-2.5 px-3">School Board</th>
-                      <th className="py-2.5 px-3">Clearance status</th>
-                      <th className="py-2.5 px-3 text-right">Action</th>
+                    <tr className="bg-slate-50/50 text-slate-400 font-bold uppercase tracking-wider text-[9px] border-b border-slate-200">
+                      <th className="py-3 px-4">Student ID</th>
+                      <th className="py-3 px-4">Name</th>
+                      <th className="py-3 px-4">Admission No</th>
+                      <th className="py-3 px-4">Roll No</th>
+                      <th className="py-3 px-4">Class-Sec</th>
+                      <th className="py-3 px-4">School Board</th>
+                      <th className="py-3 px-4">Clearance Status</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {students.map(s => (
-                      <tr key={s._id} className="hover:bg-slate-50/30">
-                        <td className="py-2.5 px-3 font-semibold text-slate-900">{s.studentId}</td>
-                        <td className="py-2.5 px-3 font-medium text-slate-800">{s.name}</td>
-                        <td className="py-2.5 px-3">{s.admissionNumber}</td>
-                        <td className="py-2.5 px-3">{s.rollNumber}</td>
-                        <td className="py-2.5 px-3 font-semibold text-slate-850">{s.class} - {s.section}</td>
-                        <td className="py-2.5 px-3">{s.schoolType}</td>
-                        <td className="py-2.5 px-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase border ${
+                      <tr key={s._id} className="hover:bg-slate-50/40">
+                        <td className="py-3.5 px-4 font-bold text-slate-900">{s.studentId}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-800">{s.name}</td>
+                        <td className="py-3.5 px-4 font-mono">{s.admissionNumber}</td>
+                        <td className="py-3.5 px-4 font-mono">{s.rollNumber}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-850">{s.class} - {s.section}</td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                            s.schoolType === 'CBSE' ? 'bg-indigo-50 border-indigo-200/50 text-indigo-700' : 'bg-rose-50 border-rose-200/50 text-rose-700'
+                          }`}>
+                            {s.schoolType}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
                             s.clearanceStatus === 'COMPLETED'
                               ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                               : 'bg-amber-50 border-amber-200 text-amber-700'
@@ -602,13 +559,13 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                             {s.clearanceStatus.replace('_', ' ')}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-right">
+                        <td className="py-3.5 px-4 text-right">
                           <button
                             onClick={() => onOpenStudentHistory(s._id)}
-                            className="inline-flex items-center space-x-1 font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1.5 rounded-lg cursor-pointer transition-colors"
+                            className="inline-flex items-center space-x-1 font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 px-2.5 py-1.5 rounded-xl cursor-pointer transition-colors"
                           >
                             <Eye className="h-3.5 w-3.5" />
-                            <span>Open Timeline</span>
+                            <span>Clearance Timeline</span>
                           </button>
                         </td>
                       </tr>
@@ -619,10 +576,10 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
             )}
           </div>
 
-          {/* Bulk Import section */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          {/* Bulk Importer */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
             <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">
-              Bulk Student Importer
+              Bulk Student Importer (JSON)
             </h3>
             
             <form onSubmit={handleBulkImportSubmit} className="space-y-4">
@@ -670,7 +627,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                 <button
                   type="submit"
                   disabled={bulkSubmitting || !bulkJson.trim()}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md transition-colors disabled:opacity-50 cursor-pointer ml-auto"
+                  className="px-4.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md transition-colors disabled:opacity-50 cursor-pointer ml-auto"
                 >
                   {bulkSubmitting ? 'Importing...' : 'Submit Bulk Import'}
                 </button>
@@ -682,28 +639,31 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
       )}
 
       {/* ========================================== */}
-      {/* 3. SCHOOL & INVENTORY CONFIG TAB */}
+      {/* 3. SCHOOL & CATALOG TAB */}
       {/* ========================================== */}
       {activeSubTab === 'configs' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Class Definitions */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          {/* Classes structure */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Class Maps Configurations</h3>
-              <button onClick={() => setShowAddClass(true)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer">
-                <Plus className="h-4 w-4" />
+              <div className="flex items-center space-x-2">
+                <Building className="h-4.5 w-4.5 text-slate-500" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Class Maps</h3>
+              </div>
+              <button onClick={() => setShowAddClass(true)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer">
+                <Plus className="h-4.5 w-4.5" />
               </button>
             </div>
 
             {showAddClass && (
-              <form onSubmit={handleAddClassSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-3 text-xs">
+              <form onSubmit={handleAddClassSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-3 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">School Board</label>
                   <select
                     value={classForm.schoolType}
                     onChange={(e) => setClassForm(prev => ({ ...prev, schoolType: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
                   >
                     <option value="CBSE">CBSE</option>
                     <option value="ICSE">ICSE</option>
@@ -716,8 +676,8 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={classForm.name}
                     onChange={(e) => setClassForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
-                    placeholder="e.g. Class 10 or Class I"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
+                    placeholder="e.g. Class 10"
                   />
                 </div>
                 <div>
@@ -727,46 +687,49 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={classForm.sections}
                     onChange={(e) => setClassForm(prev => ({ ...prev, sections: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
                   />
                 </div>
                 <div className="flex space-x-2 pt-2">
-                  <button type="submit" className="flex-1 py-1.5 bg-indigo-600 text-white rounded font-semibold">Save</button>
-                  <button type="button" onClick={() => setShowAddClass(false)} className="flex-1 py-1.5 bg-slate-200 text-slate-700 rounded font-semibold">Cancel</button>
+                  <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold">Save</button>
+                  <button type="button" onClick={() => setShowAddClass(false)} className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
                 </div>
               </form>
             )}
 
             <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1">
               {classes.map(c => (
-                <div key={c._id} className="py-2 flex justify-between items-center text-xs">
+                <div key={c._id} className="py-2.5 flex justify-between items-center text-xs">
                   <div>
-                    <span className="font-semibold text-slate-900">{c.name}</span>
-                    <span className="ml-2 bg-slate-100 text-slate-600 px-1 py-0.5 rounded text-[10px]">{c.schoolType}</span>
+                    <span className="font-bold text-slate-800">{c.name}</span>
+                    <span className="ml-2 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[9px] font-bold">{c.schoolType}</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono">Sec: {c.sections?.join(', ')}</span>
+                  <span className="text-[10px] text-slate-400 font-semibold font-mono">Sec: {c.sections?.join(', ')}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Book Lists per Class */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          {/* Book settings */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Book Checklists Settings</h3>
-              <button onClick={() => setShowAddBookConfig(true)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer">
-                <Plus className="h-4 w-4" />
+              <div className="flex items-center space-x-2">
+                <Library className="h-4.5 w-4.5 text-slate-500" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Book Checklists</h3>
+              </div>
+              <button onClick={() => setShowAddBookConfig(true)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer">
+                <Plus className="h-4.5 w-4.5" />
               </button>
             </div>
 
             {showAddBookConfig && (
-              <form onSubmit={handleAddBookConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-3 text-xs">
+              <form onSubmit={handleAddBookConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-3 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">School Board</label>
                   <select
                     value={bookConfigForm.schoolType}
                     onChange={(e) => setBookConfigForm(prev => ({ ...prev, schoolType: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
                   >
                     <option value="CBSE">CBSE</option>
                     <option value="ICSE">ICSE</option>
@@ -779,7 +742,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={bookConfigForm.class}
                     onChange={(e) => setBookConfigForm(prev => ({ ...prev, class: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
                     placeholder="e.g. Class 10"
                   />
                 </div>
@@ -789,7 +752,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={bookConfigForm.books}
                     onChange={(e) => setBookConfigForm(prev => ({ ...prev, books: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
                     rows={2}
                   />
                 </div>
@@ -800,40 +763,43 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={bookConfigForm.feeAmount}
                     onChange={(e) => setBookConfigForm(prev => ({ ...prev, feeAmount: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
                   />
                 </div>
                 <div className="flex space-x-2 pt-2">
-                  <button type="submit" className="flex-1 py-1.5 bg-indigo-600 text-white rounded font-semibold">Save</button>
-                  <button type="button" onClick={() => setShowAddBookConfig(false)} className="flex-1 py-1.5 bg-slate-200 text-slate-700 rounded font-semibold">Cancel</button>
+                  <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold">Save</button>
+                  <button type="button" onClick={() => setShowAddBookConfig(false)} className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
                 </div>
               </form>
             )}
 
             <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1">
               {booksConfig.map(b => (
-                <div key={b._id} className="py-2.5 text-xs space-y-1">
+                <div key={b._id} className="py-3 text-xs space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-slate-850">{b.schoolType} - {b.class}</span>
-                    <span className="font-bold text-indigo-700">₹{b.feeAmount}</span>
+                    <span className="font-bold text-slate-800">{b.schoolType} - {b.class}</span>
+                    <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/50 px-2 py-0.5 rounded-lg">₹{b.feeAmount}</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-medium">Books: {b.books?.join(', ')}</p>
+                  <p className="text-[10px] text-slate-500 font-medium leading-relaxed">Books: {b.books?.join(', ')}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Uniform Items per Class */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          {/* Uniform settings */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Uniform Checklist Settings</h3>
-              <button onClick={() => setShowAddUniformConfig(true)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer">
-                <Plus className="h-4 w-4" />
+              <div className="flex items-center space-x-2">
+                <FolderKanban className="h-4.5 w-4.5 text-slate-500" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Uniform Checklists</h3>
+              </div>
+              <button onClick={() => setShowAddUniformConfig(true)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer">
+                <Plus className="h-4.5 w-4.5" />
               </button>
             </div>
 
             {showAddUniformConfig && (
-              <form onSubmit={handleAddUniformConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-3 text-xs">
+              <form onSubmit={handleAddUniformConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-3 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">Class Name</label>
                   <input
@@ -841,7 +807,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={uniformConfigForm.class}
                     onChange={(e) => setUniformConfigForm(prev => ({ ...prev, class: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
                     placeholder="e.g. Class 10"
                   />
                 </div>
@@ -851,7 +817,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={uniformConfigForm.items}
                     onChange={(e) => setUniformConfigForm(prev => ({ ...prev, items: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
                     rows={2}
                   />
                 </div>
@@ -862,24 +828,24 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={uniformConfigForm.feeAmount}
                     onChange={(e) => setUniformConfigForm(prev => ({ ...prev, feeAmount: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
                   />
                 </div>
                 <div className="flex space-x-2 pt-2">
-                  <button type="submit" className="flex-1 py-1.5 bg-indigo-600 text-white rounded font-semibold">Save</button>
-                  <button type="button" onClick={() => setShowAddUniformConfig(false)} className="flex-1 py-1.5 bg-slate-200 text-slate-700 rounded font-semibold">Cancel</button>
+                  <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold">Save</button>
+                  <button type="button" onClick={() => setShowAddUniformConfig(false)} className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
                 </div>
               </form>
             )}
 
             <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1">
               {uniformsConfig.map(u => (
-                <div key={u._id} className="py-2.5 text-xs space-y-1">
+                <div key={u._id} className="py-3 text-xs space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-slate-850">{u.class}</span>
-                    <span className="font-bold text-indigo-700">₹{u.feeAmount}</span>
+                    <span className="font-bold text-slate-800">{u.class}</span>
+                    <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/50 px-2 py-0.5 rounded-lg">₹{u.feeAmount}</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-medium">Items: {u.items?.join(', ')}</p>
+                  <p className="text-[10px] text-slate-500 font-medium leading-relaxed">Items: {u.items?.join(', ')}</p>
                 </div>
               ))}
             </div>
@@ -889,96 +855,46 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
       )}
 
       {/* ========================================== */}
-      {/* 4. ANALYTICS & REPORTS TAB */}
+      {/* 4. ANALYTICS & REPORTS */}
       {/* ========================================== */}
       {activeSubTab === 'reports' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-6">
           <div>
-            <h3 className="text-sm font-bold text-slate-800">Operational Analytics Exporters</h3>
+            <h3 className="text-sm font-bold text-slate-900">Operational Analytics Exporters</h3>
             <p className="text-[11px] text-slate-400 mt-0.5">Download current databases and collections ledgers in CSV spreadsheets</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            
-            <div className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between h-36">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Tuition Fees collections Ledger</h4>
-                <p className="text-[10px] text-slate-400 mt-1">Export discounts, fines, collected amounts, and balances for all registered students.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { title: 'Tuition Fees collections Ledger', desc: 'Export discounts, fines, collected amounts, and balances for all registered students.', type: 'tuition', color: 'bg-indigo-50/50 text-indigo-700 border-indigo-200/50 hover:bg-indigo-50' },
+              { title: 'Book Distribution clearance Registry', desc: 'Export textbook checklist distributions, library collections, and clearance dates.', type: 'books', color: 'bg-amber-50/50 text-amber-700 border-amber-200/50 hover:bg-amber-50' },
+              { title: 'Uniform Distribution clearance Registry', desc: 'Export issued uniform items checklist collections and fees clearance ledgers.', type: 'uniforms', color: 'bg-rose-50/50 text-rose-700 border-rose-200/50 hover:bg-rose-50' },
+              { title: 'Pending Fees Outstanding Sheet', desc: 'List of all students with non-zero outstanding balances in any clearance department.', type: 'pending', color: 'bg-slate-100/50 text-slate-700 border-slate-300 hover:bg-slate-100' },
+              { title: 'Full Clearance Workflow logs', desc: 'List of all students, class details, and their overall sequential clearance status.', type: 'clearance', color: 'bg-emerald-50/50 text-emerald-800 border-emerald-200/50 hover:bg-emerald-50' }
+            ].map((r, idx) => (
+              <div key={idx} className="border border-slate-200 rounded-2xl p-5 flex flex-col justify-between h-40 hover:shadow-premium transition-all hover:border-slate-300">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">{r.title}</h4>
+                  <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed font-semibold">{r.desc}</p>
+                </div>
+                <button
+                  onClick={() => handleExportCSV(r.type)}
+                  className={`w-full inline-flex items-center justify-center space-x-1.5 py-2.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${r.color}`}
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Download spreadsheet</span>
+                </button>
               </div>
-              <button
-                onClick={() => handleExportCSV('tuition')}
-                className="w-full inline-flex items-center justify-center space-x-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-800 rounded-lg text-xs font-semibold cursor-pointer border border-indigo-200/50"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Tuition Ledger</span>
-              </button>
-            </div>
-
-            <div className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between h-36">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Book Distribution clearance Registry</h4>
-                <p className="text-[10px] text-slate-400 mt-1">Export textbook checklist distributions, library collections, and clearance dates.</p>
-              </div>
-              <button
-                onClick={() => handleExportCSV('books')}
-                className="w-full inline-flex items-center justify-center space-x-1 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-800 rounded-lg text-xs font-semibold cursor-pointer border border-amber-200/50"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Book Registry</span>
-              </button>
-            </div>
-
-            <div className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between h-36">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Uniform Distribution clearance Registry</h4>
-                <p className="text-[10px] text-slate-400 mt-1">Export issued uniform items checklist collections and fees clearance ledgers.</p>
-              </div>
-              <button
-                onClick={() => handleExportCSV('uniforms')}
-                className="w-full inline-flex items-center justify-center space-x-1 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 rounded-lg text-xs font-semibold cursor-pointer border border-rose-200/50"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Uniform Registry</span>
-              </button>
-            </div>
-
-            <div className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between h-36">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Pending Fees Outstanding Sheet</h4>
-                <p className="text-[10px] text-slate-400 mt-1">List of all students with non-zero outstanding balances in any clearance department.</p>
-              </div>
-              <button
-                onClick={() => handleExportCSV('pending')}
-                className="w-full inline-flex items-center justify-center space-x-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-800 rounded-lg text-xs font-semibold cursor-pointer border border-slate-300"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Outstandings Sheet</span>
-              </button>
-            </div>
-
-            <div className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between h-36">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Full Clearance Workflow logs</h4>
-                <p className="text-[10px] text-slate-400 mt-1">List of all students, class details, and their overall sequential clearance status.</p>
-              </div>
-              <button
-                onClick={() => handleExportCSV('clearance')}
-                className="w-full inline-flex items-center justify-center space-x-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-800 rounded-lg text-xs font-semibold cursor-pointer border border-emerald-200"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Clearance Logs</span>
-              </button>
-            </div>
-
+            ))}
           </div>
         </div>
       )}
 
       {/* ========================================== */}
-      {/* 5. USERS & STAFF MANAGEMENT TAB */}
+      {/* 5. USERS & STAFF DIRECTORY */}
       {/* ========================================== */}
       {activeSubTab === 'users' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-5">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <div>
               <h3 className="text-sm font-bold text-slate-800">Staff Accounts Directory</h3>
@@ -986,7 +902,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
             </div>
             <button
               onClick={() => setShowAddUser(true)}
-              className="inline-flex items-center space-x-1 font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg text-xs cursor-pointer shadow-md shadow-indigo-600/10"
+              className="inline-flex items-center space-x-1 font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Create Account</span>
@@ -994,58 +910,58 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
           </div>
 
           {showAddUser && (
-            <form onSubmit={handleAddUserSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <form onSubmit={handleAddUserSubmit} className="bg-slate-50 p-5 border border-slate-200 rounded-2xl space-y-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1">Display Name</label>
+                  <label className="block font-bold text-slate-500 mb-1.5">Display Name</label>
                   <input
                     type="text"
                     required
                     value={userForm.name}
                     onChange={(e) => setUserForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2.5 py-1.5"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-600"
                     placeholder="e.g. David Carter"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1">Email address</label>
+                  <label className="block font-bold text-slate-500 mb-1.5">Email address</label>
                   <input
                     type="email"
                     required
                     value={userForm.email}
                     onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2.5 py-1.5"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-600"
                     placeholder="e.g. david@school.com"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1">Username (Login ID)</label>
+                  <label className="block font-bold text-slate-500 mb-1.5">Username (Login ID)</label>
                   <input
                     type="text"
                     required
                     value={userForm.username}
                     onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2.5 py-1.5"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-600"
                     placeholder="e.g. david_tuition"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1">Password</label>
+                  <label className="block font-bold text-slate-500 mb-1.5">Password</label>
                   <input
                     type="password"
                     required
                     value={userForm.password}
                     onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2.5 py-1.5"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-600"
                     placeholder="••••••••"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1">Department Role</label>
+                  <label className="block font-bold text-slate-500 mb-1.5">Department Role</label>
                   <select
                     value={userForm.role}
                     onChange={(e) => setUserForm(prev => ({ ...prev, role: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2.5 py-1.5"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-600"
                   >
                     <option value="TUITION_DEPT">Tuition Fee Department</option>
                     <option value="BOOK_DEPT">Book Department</option>
@@ -1055,11 +971,11 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                 </div>
               </div>
 
-              {userFormError && <p className="text-xs text-rose-500 font-semibold">{userFormError}</p>}
+              {userFormError && <p className="text-xs text-rose-500 font-bold">{userFormError}</p>}
 
               <div className="flex space-x-2 pt-2 justify-end">
-                <button type="submit" className="py-2 px-4 bg-indigo-600 text-white rounded-lg font-semibold cursor-pointer">Register Account</button>
-                <button type="button" onClick={() => setShowAddUser(false)} className="py-2 px-4 bg-slate-200 text-slate-700 rounded-lg font-semibold cursor-pointer">Cancel</button>
+                <button type="submit" className="py-2.5 px-4 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer">Register Account</button>
+                <button type="button" onClick={() => setShowAddUser(false)} className="py-2.5 px-4 bg-slate-250 text-slate-700 rounded-xl font-bold cursor-pointer">Cancel</button>
               </div>
             </form>
           )}
@@ -1067,36 +983,36 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-xs divide-y divide-slate-200">
               <thead>
-                <tr className="bg-slate-50/50 text-slate-400 font-semibold">
-                  <th className="py-2.5 px-3">Staff Name</th>
-                  <th className="py-2.5 px-3">Username</th>
-                  <th className="py-2.5 px-3">Email</th>
-                  <th className="py-2.5 px-3">Department/Role</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Actions</th>
+                <tr className="bg-slate-50/50 text-slate-400 font-bold uppercase tracking-wider text-[9px] border-b border-slate-200">
+                  <th className="py-3 px-4">Staff Name</th>
+                  <th className="py-3 px-4">Username</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Department/Role</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {usersList.map(u => (
                   <tr key={u._id} className="hover:bg-slate-50/30">
-                    <td className="py-2.5 px-3 font-semibold text-slate-800">{u.name}</td>
-                    <td className="py-2.5 px-3">{u.username}</td>
-                    <td className="py-2.5 px-3">{u.email}</td>
-                    <td className="py-2.5 px-3 font-medium text-slate-600">{u.role}</td>
-                    <td className="py-2.5 px-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                        u.active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                    <td className="py-3.5 px-4 font-bold text-slate-800">{u.name}</td>
+                    <td className="py-3.5 px-4 font-semibold">{u.username}</td>
+                    <td className="py-3.5 px-4">{u.email}</td>
+                    <td className="py-3.5 px-4 font-medium text-slate-500">{u.role}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                        u.active ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
                       }`}>
                         {u.active ? 'Active' : 'Suspended'}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => handleToggleUser(u._id)}
-                        className={`inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-1 rounded-lg border cursor-pointer transition-colors ${
+                        className={`inline-flex items-center space-x-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl border cursor-pointer transition-colors ${
                           u.active
-                            ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200'
-                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200'
+                            ? 'bg-rose-50 hover:bg-rose-105 hover:bg-rose-100 text-rose-600 border-rose-200'
+                            : 'bg-emerald-50 hover:bg-emerald-105 hover:bg-emerald-100 text-emerald-600 border-emerald-200'
                         }`}
                       >
                         {u.active ? 'Suspend' : 'Activate'}
@@ -1111,13 +1027,13 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
       )}
 
       {/* ========================================== */}
-      {/* 6. SYSTEM AUDIT TIMELINE LOGS TAB */}
+      {/* 6. SECURITY AUDITS TAB */}
       {/* ========================================== */}
       {activeSubTab === 'audit' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-800">System modification Audit logs</h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">Chronological trace of database operations and sequential approvals</p>
+            <h3 className="text-sm font-bold text-slate-800">Security audits trace timeline</h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">Chronological record of database edits and workflow sequence approvals</p>
           </div>
 
           {auditLoading ? (
@@ -1127,35 +1043,34 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
           ) : auditLogs.length === 0 ? (
             <p className="text-center text-slate-400 text-xs py-8">No audit logs logged in system.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4.5">
               {auditLogs.map(log => (
-                <div key={log._id} className="border border-slate-150 rounded-xl p-3.5 text-xs space-y-1 hover:bg-slate-50/30 transition-colors">
+                <div key={log._id} className="border border-slate-150 rounded-2xl p-4.5 text-xs space-y-1 hover:bg-slate-50/30 transition-colors hover:border-slate-350">
                   <div className="flex justify-between items-center text-[10px]">
-                    <span className="font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/50 px-2 py-0.5 rounded-full">{log.action}</span>
-                    <span className="text-slate-400">{new Date(log.createdAt).toLocaleString()}</span>
+                    <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/40 px-2.5 py-0.5 rounded-full">{log.action}</span>
+                    <span className="text-slate-400 font-semibold">{new Date(log.createdAt).toLocaleString()}</span>
                   </div>
-                  <p className="text-slate-850 font-semibold pt-1">{log.details}</p>
-                  <div className="flex items-center space-x-1.5 text-[10px] text-slate-400">
-                    <span className="font-semibold text-slate-500">User: {log.user}</span>
+                  <p className="text-slate-850 font-bold pt-1.5">{log.details}</p>
+                  <div className="flex items-center space-x-2 text-[10px] text-slate-400 font-semibold mt-1">
+                    <span>User: {log.user}</span>
                     {log.student && (
                       <>
                         <span>•</span>
-                        <span className="font-semibold text-slate-500">Student Ref: {log.student.studentId}</span>
+                        <span>Student Ref: {log.student.studentId}</span>
                       </>
                     )}
                   </div>
-                  {/* Values diffing preview */}
                   {(log.oldValue || log.newValue) && (
-                    <div className="mt-2.5 bg-slate-950 p-2.5 rounded-lg border border-slate-800 font-mono text-[10px] text-slate-300 max-h-32 overflow-y-auto">
+                    <div className="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-[9px] text-slate-300 max-h-32 overflow-y-auto">
                       {log.oldValue && (
-                        <div className="mb-1 text-rose-400">
-                          <span>- OLD: </span>
+                        <div className="mb-1 text-rose-400/90 leading-normal">
+                          <span>- PRIOR: </span>
                           <span>{JSON.stringify(log.oldValue)}</span>
                         </div>
                       )}
                       {log.newValue && (
-                        <div className="text-emerald-400">
-                          <span>+ NEW: </span>
+                        <div className="text-emerald-400/90 leading-normal">
+                          <span>+ AFTER: </span>
                           <span>{JSON.stringify(log.newValue)}</span>
                         </div>
                       )}
@@ -1169,11 +1084,11 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
       )}
 
       {/* ========================================== */}
-      {/* 7. MANUAL STUDENT REGISTRATION MODAL */}
+      {/* 7. REGISTRATION MODAL */}
       {/* ========================================== */}
       {showAddStudent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-slide-up my-8">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-slide-up my-8">
             <div className="px-6 py-4 bg-[#0B192C] text-white flex justify-between items-center">
               <span className="text-sm font-bold">Manual Student Registration Form</span>
               <button onClick={() => setShowAddStudent(false)} className="text-slate-400 hover:text-white">
@@ -1181,13 +1096,13 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
               </button>
             </div>
 
-            <form onSubmit={handleAddStudentSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+            <form onSubmit={handleAddStudentSubmit} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto text-xs">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 
-                {/* Academic Fields */}
-                <div className="space-y-3">
-                  <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1 uppercase tracking-wider text-[10px]">Academic Details</h4>
+                {/* Academic */}
+                <div className="space-y-3.5">
+                  <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider text-[10px]">Academic Details</h4>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-1">Admission Number</label>
                     <input
@@ -1195,7 +1110,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                       required
                       value={studentForm.admissionNumber}
                       onChange={(e) => setStudentForm(prev => ({ ...prev, admissionNumber: e.target.value }))}
-                      className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-600"
                       placeholder="e.g. ADM202688"
                     />
                   </div>
@@ -1205,7 +1120,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                       <select
                         value={studentForm.schoolType}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, schoolType: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                       >
                         <option value="CBSE">CBSE</option>
                         <option value="ICSE">ICSE</option>
@@ -1218,7 +1133,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                         required
                         value={studentForm.academicYear}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, academicYear: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1230,7 +1145,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                         required
                         value={studentForm.class}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, class: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                         placeholder="e.g. Class 10"
                       />
                     </div>
@@ -1241,7 +1156,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                         required
                         value={studentForm.section}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, section: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                         placeholder="e.g. A"
                       />
                     </div>
@@ -1254,25 +1169,25 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                         required
                         value={studentForm.rollNumber}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, rollNumber: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Tuition Fee amount (₹)</label>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Tuition Fee (₹)</label>
                       <input
                         type="number"
                         value={studentForm.tuitionFeeAmount}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, tuitionFeeAmount: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                         placeholder="e.g. 15000"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Personal Details */}
-                <div className="space-y-3">
-                  <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1 uppercase tracking-wider text-[10px]">Personal Information</h4>
+                {/* Personal */}
+                <div className="space-y-3.5">
+                  <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider text-[10px]">Personal Information</h4>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-1">Student Full Name</label>
                     <input
@@ -1280,7 +1195,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                       required
                       value={studentForm.name}
                       onChange={(e) => setStudentForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                       placeholder="Enter full name"
                     />
                   </div>
@@ -1290,7 +1205,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                       <select
                         value={studentForm.gender}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, gender: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                       >
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
@@ -1304,7 +1219,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                         required
                         value={studentForm.dob}
                         onChange={(e) => setStudentForm(prev => ({ ...prev, dob: e.target.value }))}
-                        className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1315,7 +1230,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                       required
                       value={studentForm.fatherName}
                       onChange={(e) => setStudentForm(prev => ({ ...prev, fatherName: e.target.value }))}
-                      className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -1325,7 +1240,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                       required
                       value={studentForm.motherName}
                       onChange={(e) => setStudentForm(prev => ({ ...prev, motherName: e.target.value }))}
-                      className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1333,7 +1248,7 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
               </div>
 
               {/* Contacts and Address */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-3.5">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">Parent Mobile Number</label>
                   <input
@@ -1341,17 +1256,17 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                     required
                     value={studentForm.parentMobile}
                     onChange={(e) => setStudentForm(prev => ({ ...prev, parentMobile: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                     placeholder="10 digit number"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Email address (Optional)</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Email Address</label>
                   <input
                     type="email"
                     value={studentForm.email}
                     onChange={(e) => setStudentForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full border border-slate-200 bg-white rounded px-2 py-1"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
                     placeholder="student@school.com"
                   />
                 </div>
@@ -1363,17 +1278,17 @@ export default function AdminDashboard({ onOpenStudentHistory }) {
                   required
                   value={studentForm.address}
                   onChange={(e) => setStudentForm(prev => ({ ...prev, address: e.target.value }))}
-                  className="w-full border border-slate-200 bg-white rounded px-2.5 py-1.5"
+                  className="w-full border border-slate-200 bg-white rounded-2xl px-3 py-2 focus:outline-none"
                   rows={2}
                   placeholder="Street address, City, Pin"
                 />
               </div>
 
-              {studentFormError && <p className="text-xs text-rose-500 font-semibold">{studentFormError}</p>}
+              {studentFormError && <p className="text-xs text-rose-500 font-bold">{studentFormError}</p>}
 
               <div className="flex space-x-2 pt-2 justify-end border-t border-slate-100">
-                <button type="submit" className="py-2 px-4 bg-indigo-600 text-white rounded-lg font-semibold cursor-pointer">Register Student</button>
-                <button type="button" onClick={() => setShowAddStudent(false)} className="py-2 px-4 bg-slate-200 text-slate-700 rounded-lg font-semibold cursor-pointer">Cancel</button>
+                <button type="submit" className="py-2.5 px-4 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer">Register Student</button>
+                <button type="button" onClick={() => setShowAddStudent(false)} className="py-2.5 px-4 bg-slate-250 text-slate-700 rounded-xl font-bold cursor-pointer">Cancel</button>
               </div>
 
             </form>
