@@ -1,0 +1,212 @@
+[
+  {
+    "_id": "0chn5tdh9mqdwddkc",
+    "createdAt": "2026-06-14T14:46:22.956Z",
+    "schoolType": "CBSE",
+    "name": "Class 1",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "ry1tynd3ymqdwddkg",
+    "createdAt": "2026-06-14T14:46:22.960Z",
+    "schoolType": "CBSE",
+    "name": "Class 2",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "x9q0djz6nmqdwddkj",
+    "createdAt": "2026-06-14T14:46:22.963Z",
+    "schoolType": "CBSE",
+    "name": "Class 3",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "iu6ugtii2mqdwddkq",
+    "createdAt": "2026-06-14T14:46:22.970Z",
+    "schoolType": "CBSE",
+    "name": "Class 4",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "izsq42megmqdwddkw",
+    "createdAt": "2026-06-14T14:46:22.976Z",
+    "schoolType": "CBSE",
+    "name": "Class 5",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "ogwszkjgpmqdwddl3",
+    "createdAt": "2026-06-14T14:46:22.983Z",
+    "schoolType": "CBSE",
+    "name": "Class 6",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "vlhtgs7h1mqdwddlb",
+    "createdAt": "2026-06-14T14:46:22.991Z",
+    "schoolType": "CBSE",
+    "name": "Class 7",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "zitvfvliimqdwddlj",
+    "createdAt": "2026-06-14T14:46:22.999Z",
+    "schoolType": "CBSE",
+    "name": "Class 8",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "opa8mrsjzmqdwddlq",
+    "createdAt": "2026-06-14T14:46:23.006Z",
+    "schoolType": "CBSE",
+    "name": "Class 9",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "z5qihtqqqmqdwddly",
+    "createdAt": "2026-06-14T14:46:23.014Z",
+    "schoolType": "CBSE",
+    "name": "Class 10",
+    "sections": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  {
+    "_id": "2x720oqrmmqdwddm5",
+    "createdAt": "2026-06-14T14:46:23.021Z",
+    "schoolType": "ICSE",
+    "name": "Class I",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "u3ss2bzv8mqdwddmb",
+    "createdAt": "2026-06-14T14:46:23.027Z",
+    "schoolType": "ICSE",
+    "name": "Class II",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "sb70lf9p8mqdwddmj",
+    "createdAt": "2026-06-14T14:46:23.035Z",
+    "schoolType": "ICSE",
+    "name": "Class III",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "hcvv39cgtmqdwddmp",
+    "createdAt": "2026-06-14T14:46:23.041Z",
+    "schoolType": "ICSE",
+    "name": "Class IV",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "zk9l9hbemmqdwddmw",
+    "createdAt": "2026-06-14T14:46:23.048Z",
+    "schoolType": "ICSE",
+    "name": "Class V",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "o8lucjexymqdwddn3",
+    "createdAt": "2026-06-14T14:46:23.055Z",
+    "schoolType": "ICSE",
+    "name": "Class VI",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "ogj9i1f25mqdwddna",
+    "createdAt": "2026-06-14T14:46:23.062Z",
+    "schoolType": "ICSE",
+    "name": "Class VII",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "y90aifu1emqdwddni",
+    "createdAt": "2026-06-14T14:46:23.070Z",
+    "schoolType": "ICSE",
+    "name": "Class VIII",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "givfdkle2mqdwddno",
+    "createdAt": "2026-06-14T14:46:23.076Z",
+    "schoolType": "ICSE",
+    "name": "Class IX",
+    "sections": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "_id": "nyy3fg05dmqdwddnx",
+    "createdAt": "2026-06-14T14:46:23.085Z",
+    "schoolType": "ICSE",
+    "name": "Class X",
+    "sections": [
+      "A",
+      "B"
+    ]
+  }
+]

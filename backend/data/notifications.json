@@ -1,0 +1,34 @@
+[
+  {
+    "_id": "fcggubjs8mqdwddv6",
+    "createdAt": "2026-06-14T14:46:23.346Z",
+    "title": "Welcome to clearance dashboard",
+    "message": "System initialization complete. Clearance workflows are live.",
+    "roles": [
+      "SUPER_ADMIN",
+      "TUITION_DEPT",
+      "BOOK_DEPT",
+      "UNIFORM_DEPT"
+    ]
+  },
+  {
+    "_id": "fgrc5uwo1mqdwddvc",
+    "createdAt": "2026-06-14T14:46:23.352Z",
+    "title": "New Student Registered",
+    "message": "Arjun Sharma (STU20260001) registered. Tuition fee clearance pending.",
+    "roles": [
+      "SUPER_ADMIN",
+      "TUITION_DEPT"
+    ]
+  },
+  {
+    "_id": "5uw73p25fmqdwddvo",
+    "createdAt": "2026-06-14T14:46:23.364Z",
+    "title": "New Book Clearance Request",
+    "message": "Priya Patel (STU20260002) has cleared tuition fees and is queued for book collection.",
+    "roles": [
+      "SUPER_ADMIN",
+      "BOOK_DEPT"
+    ]
+  }
+]

@@ -1,0 +1,51 @@
+[
+  {
+    "_id": "v50kmf6lmmqdwddo4",
+    "createdAt": "2026-06-14T14:46:23.092Z",
+    "schoolType": "CBSE",
+    "class": "Class 10",
+    "books": [
+      "English Reader",
+      "Mathematics",
+      "General Science",
+      "Social Science",
+      "Hindi Grammar",
+      "Sanskrit",
+      "Computer Science"
+    ],
+    "feeAmount": 4200
+  },
+  {
+    "_id": "4q1fmb32qmqdwddo8",
+    "createdAt": "2026-06-14T14:46:23.096Z",
+    "schoolType": "CBSE",
+    "class": "Class 9",
+    "books": [
+      "English Reader",
+      "Mathematics",
+      "General Science",
+      "Social Science",
+      "Hindi Grammar",
+      "Sanskrit",
+      "Computer Science"
+    ],
+    "feeAmount": 3800
+  },
+  {
+    "_id": "mmjgibm4mmqdwddof",
+    "createdAt": "2026-06-14T14:46:23.103Z",
+    "schoolType": "ICSE",
+    "class": "Class X",
+    "books": [
+      "English Reader",
+      "Mathematics",
+      "General Science",
+      "Social Science",
+      "Hindi Grammar",
+      "Sanskrit",
+      "Computer Science",
+      "French Literature"
+    ],
+    "feeAmount": 4800
+  }
+]

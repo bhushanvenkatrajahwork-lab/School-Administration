@@ -1,0 +1,23 @@
+[
+  {
+    "_id": "ameyarnuymqdwddtx",
+    "createdAt": "2026-06-14T14:46:23.301Z",
+    "student": "kfaswg058mqdwddrt",
+    "feeAmount": 2600,
+    "amountPaid": 2600,
+    "balanceAmount": 0,
+    "status": "Paid",
+    "issuedItems": [
+      "Shirt (Boys/Girls)",
+      "Pant/Skirt",
+      "Tie",
+      "Belt",
+      "Socks (Pack of 2)",
+      "Black Leather Shoes",
+      "Sports T-Shirt (House)",
+      "Sweater (Woolen)"
+    ],
+    "paymentMethod": "Card",
+    "updatedBy": "7oicxo0nlmqdwddk6"
+  }
+]

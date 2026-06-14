@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "5a7vzw32pmqdwddqu",
+    "createdAt": "2026-06-14T14:46:23.190Z",
+    "student": "ukf0iifhgmqdwddq2",
+    "feeAmount": 4800,
+    "amountPaid": 4800,
+    "balanceAmount": 0,
+    "status": "Paid",
+    "issuedBooks": [
+      "English Reader",
+      "Mathematics",
+      "General Science",
+      "Social Science",
+      "Second Language",
+      "Computer Science",
+      "French Literature"
+    ],
+    "paymentMethod": "Cash",
+    "updatedBy": "oxdbt1840mqdwddjz"
+  },
+  {
+    "_id": "ig5cijmrfmqdwddt0",
+    "createdAt": "2026-06-14T14:46:23.268Z",
+    "student": "kfaswg058mqdwddrt",
+    "feeAmount": 3800,
+    "amountPaid": 3800,
+    "balanceAmount": 0,
+    "status": "Paid",
+    "issuedBooks": [
+      "English Reader",
+      "Mathematics",
+      "General Science",
+      "Social Science",
+      "Hindi Grammar",
+      "Sanskrit",
+      "Computer Science"
+    ],
+    "paymentMethod": "Cash",
+    "updatedBy": "oxdbt1840mqdwddjz"
+  }
+]

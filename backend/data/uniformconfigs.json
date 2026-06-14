@@ -1,0 +1,51 @@
+[
+  {
+    "_id": "ewcbro34gmqdwddol",
+    "createdAt": "2026-06-14T14:46:23.109Z",
+    "class": "Class 10",
+    "items": [
+      "Shirt (Boys/Girls)",
+      "Pant/Skirt",
+      "Tie",
+      "Belt",
+      "Socks (Pack of 2)",
+      "Black Leather Shoes",
+      "Sports T-Shirt (House)",
+      "Sweater (Woolen)"
+    ],
+    "feeAmount": 2800
+  },
+  {
+    "_id": "v1e9qw3oamqdwddoo",
+    "createdAt": "2026-06-14T14:46:23.112Z",
+    "class": "Class 9",
+    "items": [
+      "Shirt (Boys/Girls)",
+      "Pant/Skirt",
+      "Tie",
+      "Belt",
+      "Socks (Pack of 2)",
+      "Black Leather Shoes",
+      "Sports T-Shirt (House)",
+      "Sweater (Woolen)"
+    ],
+    "feeAmount": 2600
+  },
+  {
+    "_id": "7m3prm78qmqdwddov",
+    "createdAt": "2026-06-14T14:46:23.119Z",
+    "class": "Class X",
+    "items": [
+      "Shirt (Boys/Girls)",
+      "Pant/Skirt",
+      "Tie",
+      "Belt",
+      "Socks (Pack of 2)",
+      "Black Leather Shoes",
+      "Sports T-Shirt (House)",
+      "Sweater (Woolen)",
+      "Blazer (Navy Blue)"
+    ],
+    "feeAmount": 3500
+  }
+]

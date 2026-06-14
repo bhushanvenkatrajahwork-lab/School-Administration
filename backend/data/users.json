@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "jqrnxi00amqdwddjo",
+    "createdAt": "2026-06-14T14:46:22.932Z",
+    "username": "admin",
+    "email": "admin@school.com",
+    "password": "$2a$10$DP9UMTXcqf/9R3Fiqz/vZuh9R2ILRW9K2nx/I0uOi.NFR5GTbBRdy",
+    "role": "SUPER_ADMIN",
+    "name": "Principal Sarah Jenkins",
+    "active": true
+  },
+  {
+    "_id": "9nmxsgxu6mqdwddjt",
+    "createdAt": "2026-06-14T14:46:22.937Z",
+    "username": "tuition",
+    "email": "tuition@school.com",
+    "password": "$2a$10$DP9UMTXcqf/9R3Fiqz/vZuh9R2ILRW9K2nx/I0uOi.NFR5GTbBRdy",
+    "role": "TUITION_DEPT",
+    "name": "David Carter (Accounts Officer)",
+    "active": true
+  },
+  {
+    "_id": "oxdbt1840mqdwddjz",
+    "createdAt": "2026-06-14T14:46:22.943Z",
+    "username": "books",
+    "email": "books@school.com",
+    "password": "$2a$10$DP9UMTXcqf/9R3Fiqz/vZuh9R2ILRW9K2nx/I0uOi.NFR5GTbBRdy",
+    "role": "BOOK_DEPT",
+    "name": "Elena Rostova (Librarian)",
+    "active": true
+  },
+  {
+    "_id": "7oicxo0nlmqdwddk6",
+    "createdAt": "2026-06-14T14:46:22.950Z",
+    "username": "uniforms",
+    "email": "uniforms@school.com",
+    "password": "$2a$10$DP9UMTXcqf/9R3Fiqz/vZuh9R2ILRW9K2nx/I0uOi.NFR5GTbBRdy",
+    "role": "UNIFORM_DEPT",
+    "name": "Marcus Vance (Uniform Store Manager)",
+    "active": true
+  }
+]

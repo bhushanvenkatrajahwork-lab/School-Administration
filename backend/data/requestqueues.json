@@ -1,0 +1,48 @@
+[
+  {
+    "_id": "6v4czftu8mqdwddpz",
+    "createdAt": "2026-06-14T14:46:23.159Z",
+    "student": "1q4r5slsnmqdwddpb",
+    "department": "BOOK_DEPT",
+    "status": "PENDING",
+    "remarks": "Tuition cleared. Routed automatically."
+  },
+  {
+    "_id": "coto6h8m5mqdwddr8",
+    "createdAt": "2026-06-14T14:46:23.204Z",
+    "student": "ukf0iifhgmqdwddq2",
+    "department": "BOOK_DEPT",
+    "status": "APPROVED",
+    "remarks": "Books issued.",
+    "actionedAt": "2026-06-12T14:46:23.204Z",
+    "actionedBy": "oxdbt1840mqdwddjz"
+  },
+  {
+    "_id": "r4sud60tlmqdwddrn",
+    "createdAt": "2026-06-14T14:46:23.219Z",
+    "student": "ukf0iifhgmqdwddq2",
+    "department": "UNIFORM_DEPT",
+    "status": "PENDING",
+    "remarks": "Books cleared. Routed automatically."
+  },
+  {
+    "_id": "8irb5nntpmqdwddtf",
+    "createdAt": "2026-06-14T14:46:23.283Z",
+    "student": "kfaswg058mqdwddrt",
+    "department": "BOOK_DEPT",
+    "status": "APPROVED",
+    "remarks": "Books issued.",
+    "actionedAt": "2026-06-12T14:46:23.283Z",
+    "actionedBy": "oxdbt1840mqdwddjz"
+  },
+  {
+    "_id": "d5z50ziwnmqdwddue",
+    "createdAt": "2026-06-14T14:46:23.318Z",
+    "student": "kfaswg058mqdwddrt",
+    "department": "UNIFORM_DEPT",
+    "status": "APPROVED",
+    "remarks": "Uniform issued.",
+    "actionedAt": "2026-06-13T14:46:23.317Z",
+    "actionedBy": "7oicxo0nlmqdwddk6"
+  }
+]
