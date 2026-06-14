@@ -147,6 +147,7 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
     return res.status(400).json({ message: 'Please provide student, request, issued books list, fee details, and payment method' });
   }
 
+  const issuedBooks = booksIssued;
   try {
     const student = await models.Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
@@ -159,36 +160,26 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
     const balance = totalFee - amtPaid;
     const status = balance <= 0 ? 'Paid' : (amtPaid > 0 ? 'Partial' : 'Pending');
 
-    // Create or Update Book Fee details
-    let bookFee = await models.BookFee.findOne({ student: studentId });
-    let oldBookFee = bookFee ? JSON.parse(JSON.stringify(bookFee)) : null;
+    const oldBookFee = JSON.parse(JSON.stringify(student.bookFee || {}));
 
-    if (bookFee) {
-      bookFee = await models.BookFee.findOneAndUpdate(
-        { student: studentId },
-        {
-          feeAmount: totalFee,
-          amountPaid: amtPaid,
-          balanceAmount: Math.max(0, balance),
-          status,
-          issuedBooks,
-          paymentMethod,
-          updatedBy: req.user.id
-        },
-        { new: true }
-      );
-    } else {
-      bookFee = await models.BookFee.create({
-        student: studentId,
-        feeAmount: totalFee,
-        amountPaid: amtPaid,
-        balanceAmount: Math.max(0, balance),
-        status,
-        issuedBooks,
-        paymentMethod,
-        updatedBy: req.user.id
-      });
-    }
+    // Update nested Book Fee details inside the Student document
+    student.bookFee.feeAmount = totalFee;
+    student.bookFee.amountPaid = amtPaid;
+    student.bookFee.balanceAmount = Math.max(0, balance);
+    student.bookFee.status = status;
+    student.bookFee.issuedBooks = issuedBooks;
+    student.bookFee.paymentMethod = paymentMethod;
+    student.bookFee.updatedBy = req.user.id;
+
+    // Transition student clearance status to Books Cleared -> Uniform Pending
+    student.clearanceStatus = 'UNIFORM_PENDING';
+
+    await student.save();
+
+    const bookFeeData = {
+      ...(student.bookFee.toObject ? student.bookFee.toObject() : student.bookFee),
+      student: studentId
+    };
 
     // Mark the RequestQueue item as APPROVED
     await models.RequestQueue.findByIdAndUpdate(requestId, {
@@ -216,13 +207,6 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
       });
     }
 
-    // Transition student clearance status to Books Cleared -> Uniform Pending
-    const updatedStudent = await models.Student.findByIdAndUpdate(
-      studentId,
-      { clearanceStatus: 'UNIFORM_PENDING' },
-      { new: true }
-    );
-
     // Create RequestQueue record for Uniform Department
     await models.RequestQueue.create({
       student: studentId,
@@ -238,7 +222,7 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
       studentId,
       `Issued books checklist and processed book fee of ₹${amtPaid} for ${student.name}. Clearance status: Books Cleared.`,
       oldBookFee,
-      bookFee
+      bookFeeData
     );
 
     await logAudit(
@@ -247,7 +231,7 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
       studentId,
       `Student ${student.name} books cleared. Workflow forwarded to Uniform Department.`,
       oldStudent,
-      updatedStudent
+      student
     );
 
     await createNotification(
@@ -258,7 +242,7 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
 
     res.json({
       message: 'Book distribution and payment clearance submitted successfully',
-      bookFee,
+      bookFee: bookFeeData,
       payment
     });
   } catch (error) {

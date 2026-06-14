@@ -11,8 +11,9 @@ router.get('/stats', authenticate, async (req, res) => {
   try {
     const totalStudents = await models.Student.countDocuments();
     
-    // Aggregate tuition metrics
-    const tuitionRecords = await models.TuitionFee.find();
+    // Get all students' tuition info
+    const students = await models.Student.find({}, 'tuitionFee');
+    const tuitionRecords = students.map(s => s.tuitionFee).filter(Boolean);
     
     let paidStudents = 0;
     let pendingStudents = 0;
@@ -48,10 +49,21 @@ router.get('/stats', authenticate, async (req, res) => {
 // @access  Private
 router.get('/student/:studentId', authenticate, async (req, res) => {
   try {
-    const tuition = await models.TuitionFee.findOne({ student: req.params.studentId }).populate('student');
-    if (!tuition) return res.status(404).json({ message: 'Tuition record not found for student' });
+    const student = await models.Student.findById(req.params.studentId);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    
+    // Populate updatedBy manually if not JSON fallback mode
+    if (global.dbMode !== 'json' && student.tuitionFee && student.tuitionFee.updatedBy) {
+      await student.populate('tuitionFee.updatedBy');
+    }
+
+    const tuition = {
+      ...(student.tuitionFee.toObject ? student.tuitionFee.toObject() : student.tuitionFee),
+      student: student
+    };
     res.json(tuition);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -77,7 +89,7 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
     const student = await models.Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
-    const tuition = await models.TuitionFee.findOne({ student: studentId });
+    const tuition = student.tuitionFee;
     if (!tuition) return res.status(404).json({ message: 'Tuition record not found' });
 
     const oldTuition = JSON.parse(JSON.stringify(tuition));
@@ -87,7 +99,7 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
     const fn = Number(fine) || 0;
     const amtPaid = Number(amountPaid);
 
-    const totalAmount = tuition.feeAmount - disc + fn;
+    const totalAmount = (tuition.feeAmount || 0) - disc + fn;
     const newCumulativePaid = (tuition.amountPaid || 0) + amtPaid;
     const balanceAmount = totalAmount - newCumulativePaid;
 
@@ -98,23 +110,31 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
       status = 'Partial';
     }
 
-    // Update Tuition Fee record
-    const updatedTuition = await models.TuitionFee.findOneAndUpdate(
-      { student: studentId },
-      {
-        discount: disc,
-        fine: fn,
-        totalAmount,
-        amountPaid: newCumulativePaid,
-        balanceAmount: Math.max(0, balanceAmount),
-        status,
-        paymentDate: new Date(),
-        paymentMethod,
-        transactionRef: transactionRef || '',
-        updatedBy: req.user.id
-      },
-      { new: true }
-    );
+    // Update Tuition Fee fields inside the student document
+    student.tuitionFee.discount = disc;
+    student.tuitionFee.fine = fn;
+    student.tuitionFee.totalAmount = totalAmount;
+    student.tuitionFee.amountPaid = newCumulativePaid;
+    student.tuitionFee.balanceAmount = Math.max(0, balanceAmount);
+    student.tuitionFee.status = status;
+    student.tuitionFee.paymentDate = new Date();
+    student.tuitionFee.paymentMethod = paymentMethod;
+    student.tuitionFee.transactionRef = transactionRef || '';
+    student.tuitionFee.updatedBy = req.user.id;
+
+    // Workflow transition check
+    const oldStudent = JSON.parse(JSON.stringify(student));
+
+    if (status === 'Paid') {
+      student.clearanceStatus = 'BOOKS_PENDING';
+    }
+
+    await student.save();
+
+    const updatedTuition = {
+      ...(student.tuitionFee.toObject ? student.tuitionFee.toObject() : student.tuitionFee),
+      student: student
+    };
 
     // Generate Transaction Record (Payment Ledger)
     const pCount = await models.Payment.countDocuments();
@@ -141,17 +161,7 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
       updatedTuition
     );
 
-    // Workflow transition check
     if (status === 'Paid') {
-      const oldStudent = JSON.parse(JSON.stringify(student));
-      
-      // Update student status to Tuition Cleared and transition to Books Pending
-      const updatedStudent = await models.Student.findByIdAndUpdate(
-        studentId,
-        { clearanceStatus: 'BOOKS_PENDING' },
-        { new: true }
-      );
-
       // Create RequestQueue record for Book Department
       await models.RequestQueue.create({
         student: studentId,
@@ -167,7 +177,7 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
         studentId,
         `Student ${student.name} tuition status marked cleared. Workflow forwarded to Book Department.`,
         oldStudent,
-        updatedStudent
+        student
       );
 
       await createNotification(

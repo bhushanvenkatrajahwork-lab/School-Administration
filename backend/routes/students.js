@@ -111,7 +111,11 @@ router.post('/', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
 
     const studentId = await generateStudentId();
 
-    // Create Student
+    // Default tuition fee values (typically 12,000 for CBSE, 15,000 for ICSE, or configurable)
+    const baseTuition = schoolType === 'CBSE' ? 12000 : 15000;
+    const feeAmount = Number(tuitionFeeAmount) || baseTuition;
+
+    // Create Student with nested fee schemas
     const student = await models.Student.create({
       studentId,
       admissionNumber,
@@ -128,27 +132,34 @@ router.post('/', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
       email: email || '',
       address,
       academicYear,
-      clearanceStatus: 'TUITION_PENDING'
-    });
-
-    // Default tuition fee values (typically 12,000 for CBSE, 15,000 for ICSE, or configurable)
-    const baseTuition = schoolType === 'CBSE' ? 12000 : 15000;
-    const feeAmount = Number(tuitionFeeAmount) || baseTuition;
-
-    // Initialize Tuition Fee Record
-    await models.TuitionFee.create({
-      student: student._id,
-      feeAmount,
-      discount: 0,
-      fine: 0,
-      totalAmount: feeAmount,
-      amountPaid: 0,
-      balanceAmount: feeAmount,
-      status: 'Pending',
-      paymentDate: null,
-      paymentMethod: null,
-      transactionRef: '',
-      updatedBy: req.user.id
+      clearanceStatus: 'TUITION_PENDING',
+      tuitionFee: {
+        feeAmount,
+        discount: 0,
+        fine: 0,
+        totalAmount: feeAmount,
+        amountPaid: 0,
+        balanceAmount: feeAmount,
+        status: 'Pending',
+        paymentDate: null,
+        paymentMethod: null,
+        transactionRef: '',
+        updatedBy: req.user.id
+      },
+      bookFee: {
+        feeAmount: 0,
+        amountPaid: 0,
+        balanceAmount: 0,
+        status: 'Pending',
+        issuedBooks: []
+      },
+      uniformFee: {
+        feeAmount: 0,
+        amountPaid: 0,
+        balanceAmount: 0,
+        status: 'Pending',
+        issuedItems: []
+      }
     });
 
     await logAudit(
@@ -204,7 +215,9 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
         continue;
       }
 
-      const studentId = await generateStudentId();
+      const baseTuition = s.schoolType === 'CBSE' ? 12000 : 15000;
+      const feeAmount = Number(s.tuitionFeeAmount) || baseTuition;
+
       const student = await models.Student.create({
         studentId,
         admissionNumber: s.admissionNumber,
@@ -221,22 +234,31 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
         email: s.email || '',
         address: s.address,
         academicYear: s.academicYear,
-        clearanceStatus: 'TUITION_PENDING'
-      });
-
-      const baseTuition = s.schoolType === 'CBSE' ? 12000 : 15000;
-      const feeAmount = Number(s.tuitionFeeAmount) || baseTuition;
-
-      await models.TuitionFee.create({
-        student: student._id,
-        feeAmount,
-        discount: 0,
-        fine: 0,
-        totalAmount: feeAmount,
-        amountPaid: 0,
-        balanceAmount: feeAmount,
-        status: 'Pending',
-        updatedBy: req.user.id
+        clearanceStatus: 'TUITION_PENDING',
+        tuitionFee: {
+          feeAmount,
+          discount: 0,
+          fine: 0,
+          totalAmount: feeAmount,
+          amountPaid: 0,
+          balanceAmount: feeAmount,
+          status: 'Pending',
+          updatedBy: req.user.id
+        },
+        bookFee: {
+          feeAmount: 0,
+          amountPaid: 0,
+          balanceAmount: 0,
+          status: 'Pending',
+          issuedBooks: []
+        },
+        uniformFee: {
+          feeAmount: 0,
+          amountPaid: 0,
+          balanceAmount: 0,
+          status: 'Pending',
+          issuedItems: []
+        }
       });
 
       successCount++;
@@ -274,24 +296,34 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
 // @access  Private
 router.get('/:id/history', authenticate, async (req, res) => {
   try {
-    const student = await models.Student.findById(req.params.id);
+    // Fetch student and populate nested update staff names if present (only relevant when database is MongoDB)
+    let student;
+    if (global.dbMode === 'json') {
+      student = await models.Student.findById(req.params.id);
+    } else {
+      student = await models.Student.findById(req.params.id)
+        .populate('tuitionFee.updatedBy')
+        .populate('bookFee.updatedBy')
+        .populate('uniformFee.updatedBy');
+    }
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
     const studentObjectId = student._id;
 
-    // Fetch related logs & entries
-    const tuition = await models.TuitionFee.findOne({ student: studentObjectId }).populate('updatedBy');
-    const books = await models.BookFee.findOne({ student: studentObjectId }).populate('updatedBy');
-    const uniform = await models.UniformFee.findOne({ student: studentObjectId }).populate('updatedBy');
+    // Fetch remaining related logs & entries
     const payments = await models.Payment.find({ student: studentObjectId }).sort({ paymentDate: -1 });
     const requests = await models.RequestQueue.find({ student: studentObjectId }).populate('actionedBy').sort({ createdAt: 1 });
     const audits = await models.AuditLog.find({ student: studentObjectId }).sort({ createdAt: -1 });
 
+    const tuitionData = student.tuitionFee ? { ...student.tuitionFee, student: studentObjectId } : null;
+    const bookData = student.bookFee ? { ...student.bookFee, student: studentObjectId } : null;
+    const uniformData = student.uniformFee ? { ...student.uniformFee, student: studentObjectId } : null;
+
     res.json({
       student,
-      tuition: tuition || null,
-      books: books || null,
-      uniform: uniform || null,
+      tuition: tuitionData,
+      books: bookData,
+      uniform: uniformData,
       payments: payments || [],
       workflowHistory: requests || [],
       activityHistory: audits || []

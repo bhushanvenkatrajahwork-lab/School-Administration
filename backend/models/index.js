@@ -22,6 +22,40 @@ const userSchema = new mongoose.Schema({
   active: { type: Boolean, default: true }
 }, { timestamps: true });
 
+const nestedTuitionFeeSchema = new mongoose.Schema({
+  feeAmount: { type: Number, required: true, default: 0 },
+  discount: { type: Number, default: 0 },
+  fine: { type: Number, default: 0 },
+  totalAmount: { type: Number, required: true },
+  amountPaid: { type: Number, default: 0 },
+  balanceAmount: { type: Number, required: true },
+  status: { type: String, default: 'Pending', enum: ['Paid', 'Partial', 'Pending'] },
+  paymentDate: { type: Date },
+  paymentMethod: { type: String, enum: ['Cash', 'Card', 'UPI', 'NetBanking'] },
+  transactionRef: { type: String },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { _id: false });
+
+const nestedBookFeeSchema = new mongoose.Schema({
+  feeAmount: { type: Number, required: true, default: 0 },
+  amountPaid: { type: Number, default: 0 },
+  balanceAmount: { type: Number, required: true },
+  status: { type: String, default: 'Pending', enum: ['Paid', 'Partial', 'Pending'] },
+  issuedBooks: [{ type: String }],
+  paymentMethod: { type: String },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { _id: false });
+
+const nestedUniformFeeSchema = new mongoose.Schema({
+  feeAmount: { type: Number, required: true, default: 0 },
+  amountPaid: { type: Number, default: 0 },
+  balanceAmount: { type: Number, required: true },
+  status: { type: String, default: 'Pending', enum: ['Paid', 'Partial', 'Pending'] },
+  issuedItems: [{ type: String }],
+  paymentMethod: { type: String },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { _id: false });
+
 // ==========================================
 // 2. STUDENT SCHEMA
 // ==========================================
@@ -53,7 +87,10 @@ const studentSchema = new mongoose.Schema({
       'UNIFORM_CLEARED', 
       'COMPLETED'
     ] 
-  }
+  },
+  tuitionFee: { type: nestedTuitionFeeSchema, default: () => ({}) },
+  bookFee: { type: nestedBookFeeSchema, default: () => ({}) },
+  uniformFee: { type: nestedUniformFeeSchema, default: () => ({}) }
 }, { timestamps: true });
 
 // ==========================================

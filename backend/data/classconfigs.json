@@ -1,7 +1,7 @@
 [
   {
-    "_id": "0chn5tdh9mqdwddkc",
-    "createdAt": "2026-06-14T14:46:22.956Z",
+    "_id": "mcrhnd5bxmqdxo9xv",
+    "createdAt": "2026-06-14T15:22:51.091Z",
     "schoolType": "CBSE",
     "name": "Class 1",
     "sections": [
@@ -11,8 +11,8 @@
     ]
   },
   {
-    "_id": "ry1tynd3ymqdwddkg",
-    "createdAt": "2026-06-14T14:46:22.960Z",
+    "_id": "gvvemvd2imqdxo9y2",
+    "createdAt": "2026-06-14T15:22:51.098Z",
     "schoolType": "CBSE",
     "name": "Class 2",
     "sections": [
@@ -22,8 +22,8 @@
     ]
   },
   {
-    "_id": "x9q0djz6nmqdwddkj",
-    "createdAt": "2026-06-14T14:46:22.963Z",
+    "_id": "qdbqqa290mqdxo9y8",
+    "createdAt": "2026-06-14T15:22:51.104Z",
     "schoolType": "CBSE",
     "name": "Class 3",
     "sections": [
@@ -33,8 +33,8 @@
     ]
   },
   {
-    "_id": "iu6ugtii2mqdwddkq",
-    "createdAt": "2026-06-14T14:46:22.970Z",
+    "_id": "wmtiaugylmqdxo9yn",
+    "createdAt": "2026-06-14T15:22:51.119Z",
     "schoolType": "CBSE",
     "name": "Class 4",
     "sections": [
@@ -44,8 +44,8 @@
     ]
   },
   {
-    "_id": "izsq42megmqdwddkw",
-    "createdAt": "2026-06-14T14:46:22.976Z",
+    "_id": "8jcny9ekimqdxo9z1",
+    "createdAt": "2026-06-14T15:22:51.133Z",
     "schoolType": "CBSE",
     "name": "Class 5",
     "sections": [
@@ -55,8 +55,8 @@
     ]
   },
   {
-    "_id": "ogwszkjgpmqdwddl3",
-    "createdAt": "2026-06-14T14:46:22.983Z",
+    "_id": "5qi41r3fpmqdxo9zr",
+    "createdAt": "2026-06-14T15:22:51.159Z",
     "schoolType": "CBSE",
     "name": "Class 6",
     "sections": [
@@ -66,8 +66,8 @@
     ]
   },
   {
-    "_id": "vlhtgs7h1mqdwddlb",
-    "createdAt": "2026-06-14T14:46:22.991Z",
+    "_id": "e3hvwroromqdxoa0g",
+    "createdAt": "2026-06-14T15:22:51.184Z",
     "schoolType": "CBSE",
     "name": "Class 7",
     "sections": [
@@ -77,8 +77,8 @@
     ]
   },
   {
-    "_id": "zitvfvliimqdwddlj",
-    "createdAt": "2026-06-14T14:46:22.999Z",
+    "_id": "6jwf3kuacmqdxoa11",
+    "createdAt": "2026-06-14T15:22:51.205Z",
     "schoolType": "CBSE",
     "name": "Class 8",
     "sections": [
@@ -88,8 +88,8 @@
     ]
   },
   {
-    "_id": "opa8mrsjzmqdwddlq",
-    "createdAt": "2026-06-14T14:46:23.006Z",
+    "_id": "qi961xzfnmqdxoa1f",
+    "createdAt": "2026-06-14T15:22:51.219Z",
     "schoolType": "CBSE",
     "name": "Class 9",
     "sections": [
@@ -99,8 +99,8 @@
     ]
   },
   {
-    "_id": "z5qihtqqqmqdwddly",
-    "createdAt": "2026-06-14T14:46:23.014Z",
+    "_id": "xh0vwzht9mqdxoa1v",
+    "createdAt": "2026-06-14T15:22:51.235Z",
     "schoolType": "CBSE",
     "name": "Class 10",
     "sections": [
@@ -110,8 +110,8 @@
     ]
   },
   {
-    "_id": "2x720oqrmmqdwddm5",
-    "createdAt": "2026-06-14T14:46:23.021Z",
+    "_id": "7hcvep676mqdxoa29",
+    "createdAt": "2026-06-14T15:22:51.249Z",
     "schoolType": "ICSE",
     "name": "Class I",
     "sections": [
@@ -120,8 +120,8 @@
     ]
   },
   {
-    "_id": "u3ss2bzv8mqdwddmb",
-    "createdAt": "2026-06-14T14:46:23.027Z",
+    "_id": "v9mjrigtomqdxoa2o",
+    "createdAt": "2026-06-14T15:22:51.264Z",
     "schoolType": "ICSE",
     "name": "Class II",
     "sections": [
@@ -130,8 +130,8 @@
     ]
   },
   {
-    "_id": "sb70lf9p8mqdwddmj",
-    "createdAt": "2026-06-14T14:46:23.035Z",
+    "_id": "aoj7eq237mqdxoa35",
+    "createdAt": "2026-06-14T15:22:51.281Z",
     "schoolType": "ICSE",
     "name": "Class III",
     "sections": [
@@ -140,8 +140,8 @@
     ]
   },
   {
-    "_id": "hcvv39cgtmqdwddmp",
-    "createdAt": "2026-06-14T14:46:23.041Z",
+    "_id": "olf3w0n2nmqdxoa3l",
+    "createdAt": "2026-06-14T15:22:51.297Z",
     "schoolType": "ICSE",
     "name": "Class IV",
     "sections": [
@@ -150,8 +150,8 @@
     ]
   },
   {
-    "_id": "zk9l9hbemmqdwddmw",
-    "createdAt": "2026-06-14T14:46:23.048Z",
+    "_id": "dd8g6h2tsmqdxoa42",
+    "createdAt": "2026-06-14T15:22:51.314Z",
     "schoolType": "ICSE",
     "name": "Class V",
     "sections": [
@@ -160,8 +160,8 @@
     ]
   },
   {
-    "_id": "o8lucjexymqdwddn3",
-    "createdAt": "2026-06-14T14:46:23.055Z",
+    "_id": "zmezcqvqkmqdxoa4m",
+    "createdAt": "2026-06-14T15:22:51.334Z",
     "schoolType": "ICSE",
     "name": "Class VI",
     "sections": [
@@ -170,8 +170,8 @@
     ]
   },
   {
-    "_id": "ogj9i1f25mqdwddna",
-    "createdAt": "2026-06-14T14:46:23.062Z",
+    "_id": "7om0uikyemqdxoa6b",
+    "createdAt": "2026-06-14T15:22:51.395Z",
     "schoolType": "ICSE",
     "name": "Class VII",
     "sections": [
@@ -180,8 +180,8 @@
     ]
   },
   {
-    "_id": "y90aifu1emqdwddni",
-    "createdAt": "2026-06-14T14:46:23.070Z",
+    "_id": "n2feqx2numqdxoa7h",
+    "createdAt": "2026-06-14T15:22:51.437Z",
     "schoolType": "ICSE",
     "name": "Class VIII",
     "sections": [
@@ -190,8 +190,8 @@
     ]
   },
   {
-    "_id": "givfdkle2mqdwddno",
-    "createdAt": "2026-06-14T14:46:23.076Z",
+    "_id": "72wt4xgbjmqdxoa87",
+    "createdAt": "2026-06-14T15:22:51.463Z",
     "schoolType": "ICSE",
     "name": "Class IX",
     "sections": [
@@ -200,8 +200,8 @@
     ]
   },
   {
-    "_id": "nyy3fg05dmqdwddnx",
-    "createdAt": "2026-06-14T14:46:23.085Z",
+    "_id": "34hsqilw4mqdxoa9s",
+    "createdAt": "2026-06-14T15:22:51.520Z",
     "schoolType": "ICSE",
     "name": "Class X",
     "sections": [

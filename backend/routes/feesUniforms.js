@@ -155,36 +155,26 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
     const balance = totalFee - amtPaid;
     const status = balance <= 0 ? 'Paid' : (amtPaid > 0 ? 'Partial' : 'Pending');
 
-    // Create or Update Uniform Fee details
-    let uniformFee = await models.UniformFee.findOne({ student: studentId });
-    let oldUniformFee = uniformFee ? JSON.parse(JSON.stringify(uniformFee)) : null;
+    const oldUniformFee = JSON.parse(JSON.stringify(student.uniformFee || {}));
 
-    if (uniformFee) {
-      uniformFee = await models.UniformFee.findOneAndUpdate(
-        { student: studentId },
-        {
-          feeAmount: totalFee,
-          amountPaid: amtPaid,
-          balanceAmount: Math.max(0, balance),
-          status,
-          issuedItems,
-          paymentMethod,
-          updatedBy: req.user.id
-        },
-        { new: true }
-      );
-    } else {
-      uniformFee = await models.UniformFee.create({
-        student: studentId,
-        feeAmount: totalFee,
-        amountPaid: amtPaid,
-        balanceAmount: Math.max(0, balance),
-        status,
-        issuedItems,
-        paymentMethod,
-        updatedBy: req.user.id
-      });
-    }
+    // Update nested Uniform Fee details inside the Student document
+    student.uniformFee.feeAmount = totalFee;
+    student.uniformFee.amountPaid = amtPaid;
+    student.uniformFee.balanceAmount = Math.max(0, balance);
+    student.uniformFee.status = status;
+    student.uniformFee.issuedItems = itemsIssued;
+    student.uniformFee.paymentMethod = paymentMethod;
+    student.uniformFee.updatedBy = req.user.id;
+
+    // Transition student clearance status to COMPLETED (Final clearance)
+    student.clearanceStatus = 'COMPLETED';
+
+    await student.save();
+
+    const uniformFeeData = {
+      ...(student.uniformFee.toObject ? student.uniformFee.toObject() : student.uniformFee),
+      student: studentId
+    };
 
     // Mark the RequestQueue item as APPROVED
     await models.RequestQueue.findByIdAndUpdate(requestId, {
@@ -212,13 +202,6 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
       });
     }
 
-    // Transition student clearance status to COMPLETED (Final clearance)
-    const updatedStudent = await models.Student.findByIdAndUpdate(
-      studentId,
-      { clearanceStatus: 'COMPLETED' },
-      { new: true }
-    );
-
     // Logs
     await logAudit(
       req.user.username,
@@ -226,7 +209,7 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
       studentId,
       `Issued uniform items checklist and processed uniform fee of ₹${amtPaid} for ${student.name}. Clearance status: Uniform Cleared.`,
       oldUniformFee,
-      uniformFee
+      uniformFeeData
     );
 
     await logAudit(
@@ -235,7 +218,7 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
       studentId,
       `Student ${student.name} clearance completed. Marked COMPLETED.`,
       oldStudent,
-      updatedStudent
+      student
     );
 
     await createNotification(
@@ -246,7 +229,7 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
 
     res.json({
       message: 'Uniform distribution and final payment clearance submitted successfully',
-      uniformFee,
+      uniformFee: uniformFeeData,
       payment
     });
   } catch (error) {

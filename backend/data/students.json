@@ -1,7 +1,7 @@
 [
   {
-    "_id": "zqv29d4lfmqdwddp1",
-    "createdAt": "2026-06-14T14:46:23.125Z",
+    "_id": "h3vk1hfi6mqdxoaf2",
+    "createdAt": "2026-06-14T15:22:51.710Z",
     "studentId": "STU20260001",
     "admissionNumber": "ADM2026901",
     "name": "Arjun Sharma",
@@ -20,8 +20,8 @@
     "clearanceStatus": "TUITION_PENDING"
   },
   {
-    "_id": "1q4r5slsnmqdwddpb",
-    "createdAt": "2026-06-14T14:46:23.135Z",
+    "_id": "nk46xeez5mqdxoafs",
+    "createdAt": "2026-06-14T15:22:51.736Z",
     "studentId": "STU20260002",
     "admissionNumber": "ADM2026902",
     "name": "Priya Patel",
@@ -40,8 +40,8 @@
     "clearanceStatus": "BOOKS_PENDING"
   },
   {
-    "_id": "ukf0iifhgmqdwddq2",
-    "createdAt": "2026-06-14T14:46:23.162Z",
+    "_id": "1jdubwk5omqdxoaij",
+    "createdAt": "2026-06-14T15:22:51.835Z",
     "studentId": "STU20260003",
     "admissionNumber": "ADM2026903",
     "name": "Rohan Deshmukh",
@@ -60,8 +60,8 @@
     "clearanceStatus": "UNIFORM_PENDING"
   },
   {
-    "_id": "kfaswg058mqdwddrt",
-    "createdAt": "2026-06-14T14:46:23.225Z",
+    "_id": "wraaas3ozmqdxoao4",
+    "createdAt": "2026-06-14T15:22:52.036Z",
     "studentId": "STU20260004",
     "admissionNumber": "ADM2026904",
     "name": "Ananya Rao",

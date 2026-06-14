@@ -1,7 +1,7 @@
 [
   {
-    "_id": "fcggubjs8mqdwddv6",
-    "createdAt": "2026-06-14T14:46:23.346Z",
+    "_id": "72ik0aakgmqdxoawx",
+    "createdAt": "2026-06-14T15:22:52.353Z",
     "title": "Welcome to clearance dashboard",
     "message": "System initialization complete. Clearance workflows are live.",
     "roles": [
@@ -12,8 +12,8 @@
     ]
   },
   {
-    "_id": "fgrc5uwo1mqdwddvc",
-    "createdAt": "2026-06-14T14:46:23.352Z",
+    "_id": "ft1bfxp6mmqdxoax7",
+    "createdAt": "2026-06-14T15:22:52.363Z",
     "title": "New Student Registered",
     "message": "Arjun Sharma (STU20260001) registered. Tuition fee clearance pending.",
     "roles": [
@@ -22,8 +22,8 @@
     ]
   },
   {
-    "_id": "5uw73p25fmqdwddvo",
-    "createdAt": "2026-06-14T14:46:23.364Z",
+    "_id": "krsrn58gvmqdxoaxo",
+    "createdAt": "2026-06-14T15:22:52.380Z",
     "title": "New Book Clearance Request",
     "message": "Priya Patel (STU20260002) has cleared tuition fees and is queued for book collection.",
     "roles": [

@@ -1,58 +1,58 @@
 [
   {
-    "_id": "xfr6ghcuumqdwddpv",
-    "createdAt": "2026-06-14T14:46:23.155Z",
+    "_id": "rnumyconomqdxoai2",
+    "createdAt": "2026-06-14T15:22:51.818Z",
     "user": "tuition",
     "action": "TUITION_PAYMENT_COLLECTED",
-    "student": "1q4r5slsnmqdwddpb",
+    "student": "nk46xeez5mqdxoafs",
     "details": "Collected tuition payment of ₹15000 for Priya Patel. Status: Paid"
   },
   {
-    "_id": "ptmset9pbmqdwddqp",
-    "createdAt": "2026-06-14T14:46:23.185Z",
+    "_id": "8szshjynhmqdxoakc",
+    "createdAt": "2026-06-14T15:22:51.900Z",
     "user": "tuition",
     "action": "TUITION_PAYMENT_COLLECTED",
-    "student": "ukf0iifhgmqdwddq2",
+    "student": "1jdubwk5omqdxoaij",
     "details": "Collected tuition payment of ₹18000 for Rohan Deshmukh. Status: Paid"
   },
   {
-    "_id": "5lau2mlnhmqdwddrf",
-    "createdAt": "2026-06-14T14:46:23.211Z",
+    "_id": "qq68nljgtmqdxoamz",
+    "createdAt": "2026-06-14T15:22:51.995Z",
     "user": "books",
     "action": "BOOK_DISTRIBUTION_SUBMITTED",
-    "student": "ukf0iifhgmqdwddq2",
+    "student": "1jdubwk5omqdxoaij",
     "details": "Issued books checklist and processed book fee of ₹4800 for Rohan Deshmukh."
   },
   {
-    "_id": "aydwui0d9mqdwddsq",
-    "createdAt": "2026-06-14T14:46:23.258Z",
+    "_id": "2en8eldyjmqdxoaq9",
+    "createdAt": "2026-06-14T15:22:52.113Z",
     "user": "tuition",
     "action": "TUITION_PAYMENT_COLLECTED",
-    "student": "kfaswg058mqdwddrt",
+    "student": "wraaas3ozmqdxoao4",
     "details": "Collected tuition payment of ₹12000 for Ananya Rao. Status: Paid"
   },
   {
-    "_id": "yvy5ecvyemqdwddtm",
-    "createdAt": "2026-06-14T14:46:23.290Z",
+    "_id": "u85pgpee0mqdxoatd",
+    "createdAt": "2026-06-14T15:22:52.225Z",
     "user": "books",
     "action": "BOOK_DISTRIBUTION_SUBMITTED",
-    "student": "kfaswg058mqdwddrt",
+    "student": "wraaas3ozmqdxoao4",
     "details": "Issued books checklist and processed book fee of ₹3800 for Ananya Rao."
   },
   {
-    "_id": "q5radthtdmqdwdduo",
-    "createdAt": "2026-06-14T14:46:23.328Z",
+    "_id": "rom49xg9xmqdxoavz",
+    "createdAt": "2026-06-14T15:22:52.319Z",
     "user": "uniforms",
     "action": "UNIFORM_DISTRIBUTION_SUBMITTED",
-    "student": "kfaswg058mqdwddrt",
+    "student": "wraaas3ozmqdxoao4",
     "details": "Issued uniform items checklist and processed uniform fee of ₹2600 for Ananya Rao."
   },
   {
-    "_id": "nnuifk2khmqdwddux",
-    "createdAt": "2026-06-14T14:46:23.337Z",
+    "_id": "34i8sbx26mqdxoawi",
+    "createdAt": "2026-06-14T15:22:52.338Z",
     "user": "SYSTEM",
     "action": "STUDENT_WORKFLOW_COMPLETED",
-    "student": "kfaswg058mqdwddrt",
+    "student": "wraaas3ozmqdxoao4",
     "details": "Student Ananya Rao clearance completed. Marked COMPLETED."
   }
 ]

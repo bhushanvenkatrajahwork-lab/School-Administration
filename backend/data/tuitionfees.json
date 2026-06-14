@@ -1,8 +1,8 @@
 [
   {
-    "_id": "9w8atn9e3mqdwddp7",
-    "createdAt": "2026-06-14T14:46:23.131Z",
-    "student": "zqv29d4lfmqdwddp1",
+    "_id": "tehg7eqzomqdxoafh",
+    "createdAt": "2026-06-14T15:22:51.725Z",
+    "student": "h3vk1hfi6mqdxoaf2",
     "feeAmount": 15000,
     "discount": 0,
     "fine": 0,
@@ -13,12 +13,12 @@
     "paymentDate": null,
     "paymentMethod": null,
     "transactionRef": "",
-    "updatedBy": "9nmxsgxu6mqdwddjt"
+    "updatedBy": "0n13w197kmqdxo9wn"
   },
   {
-    "_id": "il4hftk8cmqdwddph",
-    "createdAt": "2026-06-14T14:46:23.141Z",
-    "student": "1q4r5slsnmqdwddpb",
+    "_id": "lftkdo4hhmqdxoah6",
+    "createdAt": "2026-06-14T15:22:51.786Z",
+    "student": "nk46xeez5mqdxoafs",
     "feeAmount": 15000,
     "discount": 0,
     "fine": 0,
@@ -26,15 +26,15 @@
     "amountPaid": 15000,
     "balanceAmount": 0,
     "status": "Paid",
-    "paymentDate": "2026-06-14T14:46:23.140Z",
+    "paymentDate": "2026-06-14T15:22:51.785Z",
     "paymentMethod": "UPI",
     "transactionRef": "TXN123456789",
-    "updatedBy": "9nmxsgxu6mqdwddjt"
+    "updatedBy": "0n13w197kmqdxo9wn"
   },
   {
-    "_id": "64nv3mpfpmqdwddqd",
-    "createdAt": "2026-06-14T14:46:23.173Z",
-    "student": "ukf0iifhgmqdwddq2",
+    "_id": "jlmvymma4mqdxoaj3",
+    "createdAt": "2026-06-14T15:22:51.855Z",
+    "student": "1jdubwk5omqdxoaij",
     "feeAmount": 18000,
     "discount": 0,
     "fine": 0,
@@ -42,15 +42,15 @@
     "amountPaid": 18000,
     "balanceAmount": 0,
     "status": "Paid",
-    "paymentDate": "2026-06-14T14:46:23.172Z",
+    "paymentDate": "2026-06-14T15:22:51.855Z",
     "paymentMethod": "UPI",
     "transactionRef": "TXN123456789",
-    "updatedBy": "9nmxsgxu6mqdwddjt"
+    "updatedBy": "0n13w197kmqdxo9wn"
   },
   {
-    "_id": "r4u3s6fmamqdwdds5",
-    "createdAt": "2026-06-14T14:46:23.237Z",
-    "student": "kfaswg058mqdwddrt",
+    "_id": "4f5buxzlbmqdxoaor",
+    "createdAt": "2026-06-14T15:22:52.059Z",
+    "student": "wraaas3ozmqdxoao4",
     "feeAmount": 12000,
     "discount": 0,
     "fine": 0,
@@ -58,9 +58,9 @@
     "amountPaid": 12000,
     "balanceAmount": 0,
     "status": "Paid",
-    "paymentDate": "2026-06-14T14:46:23.236Z",
+    "paymentDate": "2026-06-14T15:22:52.058Z",
     "paymentMethod": "UPI",
     "transactionRef": "TXN123456789",
-    "updatedBy": "9nmxsgxu6mqdwddjt"
+    "updatedBy": "0n13w197kmqdxo9wn"
   }
 ]

@@ -1,8 +1,8 @@
 [
   {
-    "_id": "5a7vzw32pmqdwddqu",
-    "createdAt": "2026-06-14T14:46:23.190Z",
-    "student": "ukf0iifhgmqdwddq2",
+    "_id": "dwx92p3jamqdxoakv",
+    "createdAt": "2026-06-14T15:22:51.919Z",
+    "student": "1jdubwk5omqdxoaij",
     "feeAmount": 4800,
     "amountPaid": 4800,
     "balanceAmount": 0,
@@ -17,12 +17,12 @@
       "French Literature"
     ],
     "paymentMethod": "Cash",
-    "updatedBy": "oxdbt1840mqdwddjz"
+    "updatedBy": "j6j1ke6fomqdxo9x4"
   },
   {
-    "_id": "ig5cijmrfmqdwddt0",
-    "createdAt": "2026-06-14T14:46:23.268Z",
-    "student": "kfaswg058mqdwddrt",
+    "_id": "yuux3iwoomqdxoar7",
+    "createdAt": "2026-06-14T15:22:52.147Z",
+    "student": "wraaas3ozmqdxoao4",
     "feeAmount": 3800,
     "amountPaid": 3800,
     "balanceAmount": 0,
@@ -37,6 +37,6 @@
       "Computer Science"
     ],
     "paymentMethod": "Cash",
-    "updatedBy": "oxdbt1840mqdwddjz"
+    "updatedBy": "j6j1ke6fomqdxo9x4"
   }
 ]

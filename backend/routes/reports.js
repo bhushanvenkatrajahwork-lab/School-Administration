@@ -8,7 +8,11 @@ const { authenticate } = require('../middleware/auth');
 // @access  Private
 router.get('/tuition', authenticate, async (req, res) => {
   try {
-    const list = await models.TuitionFee.find().populate('student');
+    const students = await models.Student.find();
+    const list = students.map(s => {
+      const tuition = s.tuitionFee ? (s.tuitionFee.toObject ? s.tuitionFee.toObject() : s.tuitionFee) : {};
+      return { ...tuition, student: s };
+    });
     res.json(list);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -20,7 +24,11 @@ router.get('/tuition', authenticate, async (req, res) => {
 // @access  Private
 router.get('/books', authenticate, async (req, res) => {
   try {
-    const list = await models.BookFee.find().populate('student');
+    const students = await models.Student.find();
+    const list = students.map(s => {
+      const books = s.bookFee ? (s.bookFee.toObject ? s.bookFee.toObject() : s.bookFee) : {};
+      return { ...books, student: s };
+    });
     res.json(list);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -32,7 +40,11 @@ router.get('/books', authenticate, async (req, res) => {
 // @access  Private
 router.get('/uniforms', authenticate, async (req, res) => {
   try {
-    const list = await models.UniformFee.find().populate('student');
+    const students = await models.Student.find();
+    const list = students.map(s => {
+      const uniforms = s.uniformFee ? (s.uniformFee.toObject ? s.uniformFee.toObject() : s.uniformFee) : {};
+      return { ...uniforms, student: s };
+    });
     res.json(list);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -44,21 +56,22 @@ router.get('/uniforms', authenticate, async (req, res) => {
 // @access  Private
 router.get('/pending', authenticate, async (req, res) => {
   try {
-    const tuitionPending = await models.TuitionFee.find({ balanceAmount: { $gt: 0 } }).populate('student');
-    const bookPending = await models.BookFee.find({ balanceAmount: { $gt: 0 } }).populate('student');
-    const uniformPending = await models.UniformFee.find({ balanceAmount: { $gt: 0 } }).populate('student');
+    const tuitionPending = await models.Student.find({ 'tuitionFee.balanceAmount': { $gt: 0 } });
+    const bookPending = await models.Student.find({ 'bookFee.balanceAmount': { $gt: 0 } });
+    const uniformPending = await models.Student.find({ 'uniformFee.balanceAmount': { $gt: 0 } });
 
     // Combine them into a simplified view
     const pendingList = [];
     
     // Add tuition entries
-    tuitionPending.forEach(t => {
-      if (t.student) {
+    tuitionPending.forEach(student => {
+      const t = student.tuitionFee;
+      if (t) {
         pendingList.push({
-          studentId: t.student.studentId,
-          name: t.student.name,
-          classSection: `${t.student.class}-${t.student.section}`,
-          admissionNumber: t.student.admissionNumber,
+          studentId: student.studentId,
+          name: student.name,
+          classSection: `${student.class}-${student.section}`,
+          admissionNumber: student.admissionNumber,
           feeType: 'Tuition',
           totalAmount: t.totalAmount,
           paidAmount: t.amountPaid,
@@ -69,13 +82,14 @@ router.get('/pending', authenticate, async (req, res) => {
     });
 
     // Add book entries
-    bookPending.forEach(b => {
-      if (b.student) {
+    bookPending.forEach(student => {
+      const b = student.bookFee;
+      if (b) {
         pendingList.push({
-          studentId: b.student.studentId,
-          name: b.student.name,
-          classSection: `${b.student.class}-${b.student.section}`,
-          admissionNumber: b.student.admissionNumber,
+          studentId: student.studentId,
+          name: student.name,
+          classSection: `${student.class}-${student.section}`,
+          admissionNumber: student.admissionNumber,
           feeType: 'Book',
           totalAmount: b.feeAmount,
           paidAmount: b.amountPaid,
@@ -86,13 +100,14 @@ router.get('/pending', authenticate, async (req, res) => {
     });
 
     // Add uniform entries
-    uniformPending.forEach(u => {
-      if (u.student) {
+    uniformPending.forEach(student => {
+      const u = student.uniformFee;
+      if (u) {
         pendingList.push({
-          studentId: u.student.studentId,
-          name: u.student.name,
-          classSection: `${u.student.class}-${u.student.section}`,
-          admissionNumber: u.student.admissionNumber,
+          studentId: student.studentId,
+          name: student.name,
+          classSection: `${student.class}-${student.section}`,
+          admissionNumber: student.admissionNumber,
           feeType: 'Uniform',
           totalAmount: u.feeAmount,
           paidAmount: u.amountPaid,
@@ -183,58 +198,69 @@ router.get('/export/csv', authenticate, async (req, res) => {
     let filename = 'report.csv';
 
     if (type === 'tuition') {
-      const records = await models.TuitionFee.find().populate('student');
+      const students = await models.Student.find();
       filename = 'tuition_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Fee Amount,Discount,Fine,Total,Paid,Balance,Status,Payment Date\n';
       
-      records.forEach(r => {
-        if (r.student) {
-          csvContent += `"${r.student.studentId}","${r.student.admissionNumber}","${r.student.name}","${r.student.class}","${r.student.section}",${r.feeAmount},${r.discount},${r.fine},${r.totalAmount},${r.amountPaid},${r.balanceAmount},"${r.status}","${r.paymentDate ? new Date(r.paymentDate).toLocaleDateString() : 'N/A'}"\n`;
+      students.forEach(s => {
+        const r = s.tuitionFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}","${s.section}",${r.feeAmount || 0},${r.discount || 0},${r.fine || 0},${r.totalAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}","${r.paymentDate ? new Date(r.paymentDate).toLocaleDateString() : 'N/A'}"\n`;
         }
       });
     } else if (type === 'books') {
-      const records = await models.BookFee.find().populate('student');
+      const students = await models.Student.find();
       filename = 'book_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Fee Amount,Paid,Balance,Status,Books Issued\n';
       
-      records.forEach(r => {
-        if (r.student) {
+      students.forEach(s => {
+        const r = s.bookFee;
+        if (r) {
           const booksStr = (r.issuedBooks || []).join('; ');
-          csvContent += `"${r.student.studentId}","${r.student.admissionNumber}","${r.student.name}","${r.student.class}","${r.student.section}",${r.feeAmount},${r.amountPaid},${r.balanceAmount},"${r.status}","${booksStr}"\n`;
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}","${s.section}",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}","${booksStr}"\n`;
         }
       });
     } else if (type === 'uniforms') {
-      const records = await models.UniformFee.find().populate('student');
+      const students = await models.Student.find();
       filename = 'uniform_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Fee Amount,Paid,Balance,Status,Items Issued\n';
       
-      records.forEach(r => {
-        if (r.student) {
+      students.forEach(s => {
+        const r = s.uniformFee;
+        if (r) {
           const itemsStr = (r.issuedItems || []).join('; ');
-          csvContent += `"${r.student.studentId}","${r.student.admissionNumber}","${r.student.name}","${r.student.class}","${r.student.section}",${r.feeAmount},${r.amountPaid},${r.balanceAmount},"${r.status}","${itemsStr}"\n`;
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}","${s.section}",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}","${itemsStr}"\n`;
         }
       });
     } else if (type === 'pending') {
       // Fetch tuition, books, uniforms pending
-      const tuitionPending = await models.TuitionFee.find({ balanceAmount: { $gt: 0 } }).populate('student');
-      const bookPending = await models.BookFee.find({ balanceAmount: { $gt: 0 } }).populate('student');
-      const uniformPending = await models.UniformFee.find({ balanceAmount: { $gt: 0 } }).populate('student');
+      const tuitionPending = await models.Student.find({ 'tuitionFee.balanceAmount': { $gt: 0 } });
+      const bookPending = await models.Student.find({ 'bookFee.balanceAmount': { $gt: 0 } });
+      const uniformPending = await models.Student.find({ 'uniformFee.balanceAmount': { $gt: 0 } });
       
       filename = 'pending_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class-Section,Fee Type,Total Fee,Amount Paid,Balance Outstanding,Status\n';
 
-      const appendPending = (records, typeLabel, feeFld) => {
-        records.forEach(r => {
-          if (r.student) {
-            const tot = r.totalAmount !== undefined ? r.totalAmount : r.feeAmount;
-            csvContent += `"${r.student.studentId}","${r.student.admissionNumber}","${r.student.name}","${r.student.class}-${r.student.section}","${typeLabel}",${tot},${r.amountPaid},${r.balanceAmount},"${r.status}"\n`;
-          }
-        });
-      };
+      tuitionPending.forEach(s => {
+        const r = s.tuitionFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}-${s.section}","Tuition",${r.totalAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}"\n`;
+        }
+      });
 
-      appendPending(tuitionPending, 'Tuition', 'totalAmount');
-      appendPending(bookPending, 'Book', 'feeAmount');
-      appendPending(uniformPending, 'Uniform', 'feeAmount');
+      bookPending.forEach(s => {
+        const r = s.bookFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}-${s.section}","Book",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}"\n`;
+        }
+      });
+
+      uniformPending.forEach(s => {
+        const r = s.uniformFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}-${s.section}","Uniform",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}"\n`;
+        }
+      });
     } else if (type === 'clearance') {
       const records = await models.Student.find();
       filename = 'clearance_report.csv';

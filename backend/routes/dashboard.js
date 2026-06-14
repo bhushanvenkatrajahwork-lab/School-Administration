@@ -10,30 +10,29 @@ router.get('/stats', authenticate, async (req, res) => {
   try {
     const totalStudents = await models.Student.countDocuments();
     
-    // Aggregations
-    const tuitionFees = await models.TuitionFee.find();
-    const bookFees = await models.BookFee.find();
-    const uniformFees = await models.UniformFee.find();
+    // Aggregations from nested Student fields
+    const students = await models.Student.find({}, 'tuitionFee bookFee uniformFee');
 
     let tuitionCollected = 0;
     let tuitionPending = 0;
-    tuitionFees.forEach(t => {
-      tuitionCollected += t.amountPaid || 0;
-      tuitionPending += t.balanceAmount || 0;
-    });
-
     let bookCollected = 0;
     let bookPending = 0;
-    bookFees.forEach(b => {
-      bookCollected += b.amountPaid || 0;
-      bookPending += b.balanceAmount || 0;
-    });
-
     let uniformCollected = 0;
     let uniformPending = 0;
-    uniformFees.forEach(u => {
-      uniformCollected += u.amountPaid || 0;
-      uniformPending += u.balanceAmount || 0;
+
+    students.forEach(s => {
+      if (s.tuitionFee) {
+        tuitionCollected += s.tuitionFee.amountPaid || 0;
+        tuitionPending += s.tuitionFee.balanceAmount || 0;
+      }
+      if (s.bookFee) {
+        bookCollected += s.bookFee.amountPaid || 0;
+        bookPending += s.bookFee.balanceAmount || 0;
+      }
+      if (s.uniformFee) {
+        uniformCollected += s.uniformFee.amountPaid || 0;
+        uniformPending += s.uniformFee.balanceAmount || 0;
+      }
     });
 
     const totalCollected = tuitionCollected + bookCollected + uniformCollected;
