@@ -338,9 +338,10 @@ export default function TuitionDashboard({ activeTab, setActiveTab }) {
     });
   };
 
-  if (activeTab === 'tuition-overview') {
-    return (
-      <div className="space-y-6">
+  return (
+    <div className="space-y-6">
+      {activeTab === 'tuition-overview' ? (
+        <>
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-[#0B192C] to-[#1E3E62] rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
@@ -493,13 +494,10 @@ export default function TuitionDashboard({ activeTab, setActiveTab }) {
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium">
+        </>
+      ) : (
+        <>
+          <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 leading-tight">Tuition Fee clearances</h2>
           <p className="text-xs text-slate-500">Collect fee collections and route students sequentially in clearance paths</p>
@@ -960,6 +958,8 @@ export default function TuitionDashboard({ activeTab, setActiveTab }) {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

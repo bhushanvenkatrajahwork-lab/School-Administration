@@ -10,8 +10,9 @@ router.get('/tuition', authenticate, async (req, res) => {
   try {
     const students = await models.Student.find();
     const list = students.map(s => {
-      const tuition = s.tuitionFee ? (s.tuitionFee.toObject ? s.tuitionFee.toObject() : s.tuitionFee) : {};
-      return { ...tuition, student: s };
+      const sObj = s.toObject();
+      const tuition = sObj.tuitionFee || {};
+      return { ...tuition, student: sObj };
     });
     res.json(list);
   } catch (error) {
@@ -26,8 +27,9 @@ router.get('/books', authenticate, async (req, res) => {
   try {
     const students = await models.Student.find();
     const list = students.map(s => {
-      const books = s.bookFee ? (s.bookFee.toObject ? s.bookFee.toObject() : s.bookFee) : {};
-      return { ...books, student: s };
+      const sObj = s.toObject();
+      const books = sObj.bookFee || {};
+      return { ...books, student: sObj };
     });
     res.json(list);
   } catch (error) {
@@ -42,8 +44,9 @@ router.get('/uniforms', authenticate, async (req, res) => {
   try {
     const students = await models.Student.find();
     const list = students.map(s => {
-      const uniforms = s.uniformFee ? (s.uniformFee.toObject ? s.uniformFee.toObject() : s.uniformFee) : {};
-      return { ...uniforms, student: s };
+      const sObj = s.toObject();
+      const uniforms = sObj.uniformFee || {};
+      return { ...uniforms, student: sObj };
     });
     res.json(list);
   } catch (error) {
