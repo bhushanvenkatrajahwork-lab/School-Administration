@@ -2,3 +2,14 @@ username : bhushanvenkatrajahwork_db_user
 Pass : comes as 
 
 connection string : mongodb+srv://bhushanvenkatrajahwork_db_user:AC7TylOWvt2u1SAf@schooladminsitration.6uo6lfz.mongodb.net/
+
+
+Super Admin: admin / password123
+Tuition Department: tuition / password123
+Book Department: books / password123
+Uniform Department: uniforms / password123
+
+MONGODB_URI=mongodb+srv://bhushanvenkatrajahwork_db_user:[EMAIL_ADDRESS]/school_admin?retryWrites=true&w=majority&appName=Cluster0
+
+DATABASE_MODE=real  // Keep this 'real' for MongoDB
+PORT=5000

@@ -1,40 +1,40 @@
 [
   {
-    "_id": "jpq63gp0bmqdxo9w6",
-    "createdAt": "2026-06-14T15:22:51.030Z",
+    "_id": "eqw9u19l6mqewrysh",
+    "createdAt": "2026-06-15T07:45:29.825Z",
     "username": "admin",
     "email": "admin@school.com",
-    "password": "$2a$10$1Lh9H8wlhjZQK86GGNrBGulNlLgkv48V6th0cOB.XEhcIcHZpdbbi",
+    "password": "$2a$10$Qujt/P.qLNoJVylsHbPqxuuSNk/638h7St2D8eBsHnoIK4w4WeJju",
     "role": "SUPER_ADMIN",
     "name": "Principal Sarah Jenkins",
     "active": true
   },
   {
-    "_id": "0n13w197kmqdxo9wn",
-    "createdAt": "2026-06-14T15:22:51.047Z",
+    "_id": "98tdpmyhsmqewrysr",
+    "createdAt": "2026-06-15T07:45:29.835Z",
     "username": "tuition",
     "email": "tuition@school.com",
-    "password": "$2a$10$1Lh9H8wlhjZQK86GGNrBGulNlLgkv48V6th0cOB.XEhcIcHZpdbbi",
+    "password": "$2a$10$Qujt/P.qLNoJVylsHbPqxuuSNk/638h7St2D8eBsHnoIK4w4WeJju",
     "role": "TUITION_DEPT",
     "name": "David Carter (Accounts Officer)",
     "active": true
   },
   {
-    "_id": "j6j1ke6fomqdxo9x4",
-    "createdAt": "2026-06-14T15:22:51.064Z",
+    "_id": "80y5dkux0mqewryt5",
+    "createdAt": "2026-06-15T07:45:29.849Z",
     "username": "books",
     "email": "books@school.com",
-    "password": "$2a$10$1Lh9H8wlhjZQK86GGNrBGulNlLgkv48V6th0cOB.XEhcIcHZpdbbi",
+    "password": "$2a$10$Qujt/P.qLNoJVylsHbPqxuuSNk/638h7St2D8eBsHnoIK4w4WeJju",
     "role": "BOOK_DEPT",
     "name": "Elena Rostova (Librarian)",
     "active": true
   },
   {
-    "_id": "kltyzbxy4mqdxo9xj",
-    "createdAt": "2026-06-14T15:22:51.079Z",
+    "_id": "7s8zien88mqewrytl",
+    "createdAt": "2026-06-15T07:45:29.865Z",
     "username": "uniforms",
     "email": "uniforms@school.com",
-    "password": "$2a$10$1Lh9H8wlhjZQK86GGNrBGulNlLgkv48V6th0cOB.XEhcIcHZpdbbi",
+    "password": "$2a$10$Qujt/P.qLNoJVylsHbPqxuuSNk/638h7St2D8eBsHnoIK4w4WeJju",
     "role": "UNIFORM_DEPT",
     "name": "Marcus Vance (Uniform Store Manager)",
     "active": true

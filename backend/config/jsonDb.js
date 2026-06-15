@@ -89,16 +89,16 @@ class JSONQuery {
     let targetField = '';
     
     if (field === 'student') {
-      refCollection = 'students';
+      refCollection = 'student.records';
       targetField = 'student';
     } else if (field === 'user') {
-      refCollection = 'users';
+      refCollection = 'auth.users';
       targetField = 'user';
     } else if (field === 'actionedBy') {
-      refCollection = 'users';
+      refCollection = 'auth.users';
       targetField = 'actionedBy';
     } else if (field === 'updatedBy') {
-      refCollection = 'users';
+      refCollection = 'auth.users';
       targetField = 'updatedBy';
     }
 

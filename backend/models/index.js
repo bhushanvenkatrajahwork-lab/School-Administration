@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
   },
   name: { type: String, required: true },
   active: { type: Boolean, default: true }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'auth.users' });
 
 const nestedTuitionFeeSchema = new mongoose.Schema({
   feeAmount: { type: Number, required: true, default: 0 },
@@ -91,7 +91,7 @@ const studentSchema = new mongoose.Schema({
   tuitionFee: { type: nestedTuitionFeeSchema, default: () => ({}) },
   bookFee: { type: nestedBookFeeSchema, default: () => ({}) },
   uniformFee: { type: nestedUniformFeeSchema, default: () => ({}) }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'student.records' });
 
 // ==========================================
 // 3. CLASS CONFIG SCHEMA
@@ -100,7 +100,7 @@ const classConfigSchema = new mongoose.Schema({
   schoolType: { type: String, required: true, enum: ['CBSE', 'ICSE'] },
   name: { type: String, required: true }, // e.g., "Class 1"
   sections: [{ type: String }] // e.g., ["A", "B", "C"]
-}, { timestamps: true });
+}, { timestamps: true, collection: 'config.classes' });
 
 // ==========================================
 // 4. BOOK CONFIG SCHEMA
@@ -110,7 +110,7 @@ const bookConfigSchema = new mongoose.Schema({
   class: { type: String, required: true },
   books: [{ type: String }],
   feeAmount: { type: Number, required: true, default: 0 }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'config.books' });
 
 // ==========================================
 // 5. UNIFORM CONFIG SCHEMA
@@ -119,7 +119,7 @@ const uniformConfigSchema = new mongoose.Schema({
   class: { type: String, required: true },
   items: [{ type: String }],
   feeAmount: { type: Number, required: true, default: 0 }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'config.uniforms' });
 
 // ==========================================
 // 6. TUITION FEE SCHEMA
@@ -137,7 +137,7 @@ const tuitionFeeSchema = new mongoose.Schema({
   paymentMethod: { type: String, enum: ['Cash', 'Card', 'UPI', 'NetBanking'] },
   transactionRef: { type: String },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'fee.tuition' });
 
 // ==========================================
 // 7. BOOK FEE SCHEMA
@@ -151,7 +151,7 @@ const bookFeeSchema = new mongoose.Schema({
   issuedBooks: [{ type: String }],
   paymentMethod: { type: String },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'fee.book' });
 
 // ==========================================
 // 8. UNIFORM FEE SCHEMA
@@ -165,7 +165,7 @@ const uniformFeeSchema = new mongoose.Schema({
   issuedItems: [{ type: String }],
   paymentMethod: { type: String },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'fee.uniform' });
 
 // ==========================================
 // 9. REQUEST QUEUE SCHEMA
@@ -177,7 +177,7 @@ const requestQueueSchema = new mongoose.Schema({
   remarks: { type: String },
   actionedAt: { type: Date },
   actionedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'workflow.requests' });
 
 // ==========================================
 // 10. AUDIT LOG SCHEMA
@@ -189,7 +189,7 @@ const auditLogSchema = new mongoose.Schema({
   details: { type: String, required: true },
   oldValue: { type: mongoose.Schema.Types.Mixed },
   newValue: { type: mongoose.Schema.Types.Mixed }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'logs.audit' });
 
 // ==========================================
 // 11. NOTIFICATION SCHEMA
@@ -199,7 +199,7 @@ const notificationSchema = new mongoose.Schema({
   message: { type: String, required: true },
   roles: [{ type: String }], // Array of roles that should see this, e.g. ['SUPER_ADMIN', 'BOOK_DEPT']
   readBy: [{ type: String }] // Array of userIds who marked this as read
-}, { timestamps: true });
+}, { timestamps: true, collection: 'sys.notifications' });
 
 // ==========================================
 // 12. PAYMENT (TRANSACTION HISTORY) SCHEMA
@@ -213,7 +213,7 @@ const paymentSchema = new mongoose.Schema({
   paymentMethod: { type: String, required: true },
   transactionRef: { type: String },
   staffName: { type: String, required: true }
-}, { timestamps: true });
+}, { timestamps: true, collection: 'finance.payments' });
 
 
 // Compile Mongoose models dynamically so they can be exported
@@ -240,18 +240,18 @@ try {
 
 // JSON Fallback Models
 const JSONModels = {
-  User: new JSONModel('users'),
-  Student: new JSONModel('students'),
-  ClassConfig: new JSONModel('classconfigs'),
-  BookConfig: new JSONModel('bookconfigs'),
-  UniformConfig: new JSONModel('uniformconfigs'),
-  TuitionFee: new JSONModel('tuitionfees'),
-  BookFee: new JSONModel('bookfees'),
-  UniformFee: new JSONModel('uniformfees'),
-  RequestQueue: new JSONModel('requestqueues'),
-  AuditLog: new JSONModel('auditlogs'),
-  Notification: new JSONModel('notifications'),
-  Payment: new JSONModel('payments')
+  User: new JSONModel('auth.users'),
+  Student: new JSONModel('student.records'),
+  ClassConfig: new JSONModel('config.classes'),
+  BookConfig: new JSONModel('config.books'),
+  UniformConfig: new JSONModel('config.uniforms'),
+  TuitionFee: new JSONModel('fee.tuition'),
+  BookFee: new JSONModel('fee.book'),
+  UniformFee: new JSONModel('fee.uniform'),
+  RequestQueue: new JSONModel('workflow.requests'),
+  AuditLog: new JSONModel('logs.audit'),
+  Notification: new JSONModel('sys.notifications'),
+  Payment: new JSONModel('finance.payments')
 };
 
 // Export dynamic proxy that points to either Mongo or JSON Model based on mock mode setting
