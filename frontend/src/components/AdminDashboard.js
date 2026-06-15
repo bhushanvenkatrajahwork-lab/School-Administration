@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { api } from '../utils/api';
 import { 
   Users, CheckCircle, Clock, ShieldAlert, Receipt, BookOpen, Shirt, Plus, 
@@ -38,10 +39,13 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
   const [studentFormError, setStudentFormError] = useState('');
   
   // Bulk Import state
-  const [bulkJson, setBulkJson] = useState('');
+  const [parsedStudents, setParsedStudents] = useState([]);
+  const [uploadErrors, setUploadErrors] = useState([]);
+  const [overwriteConflicts, setOverwriteConflicts] = useState(false);
   const [bulkResult, setBulkResult] = useState('');
   const [bulkError, setBulkError] = useState('');
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   // Configurations states
   const [classes, setClasses] = useState([]);
@@ -328,32 +332,261 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'Admission Number',
+      'Student Name',
+      'Gender',
+      'Date of Birth (YYYY-MM-DD)',
+      'School Board (CBSE/ICSE)',
+      'Class',
+      'Section',
+      'Roll Number',
+      'Father Name',
+      'Mother Name',
+      'Parent Mobile',
+      'Parent Email',
+      'Residential Address',
+      'Academic Year (e.g. 2026-2027)',
+      'Tuition Fee Amount (Optional)'
+    ];
+    
+    const sampleData = [
+      {
+        'Admission Number': 'ADM2026001',
+        'Student Name': 'Rahul Sharma',
+        'Gender': 'Male',
+        'Date of Birth (YYYY-MM-DD)': '2010-05-15',
+        'School Board (CBSE/ICSE)': 'CBSE',
+        'Class': 'Class 10',
+        'Section': 'A',
+        'Roll Number': '15',
+        'Father Name': 'Amit Sharma',
+        'Mother Name': 'Sunita Sharma',
+        'Parent Mobile': '9876543210',
+        'Parent Email': 'rahul.parent@example.com',
+        'Residential Address': '123 Park Street, Sector 4, Bangalore',
+        'Academic Year (e.g. 2026-2027)': '2026-2027',
+        'Tuition Fee Amount (Optional)': 12000
+      },
+      {
+        'Admission Number': 'ADM2026002',
+        'Student Name': 'Priya Patel',
+        'Gender': 'Female',
+        'Date of Birth (YYYY-MM-DD)': '2011-09-22',
+        'School Board (CBSE/ICSE)': 'ICSE',
+        'Class': 'Class 9',
+        'Section': 'B',
+        'Roll Number': '24',
+        'Father Name': 'Vikram Patel',
+        'Mother Name': 'Neha Patel',
+        'Parent Mobile': '9898989898',
+        'Parent Email': 'priya.parent@example.com',
+        'Residential Address': '456 Garden Road, Indiranagar, Bangalore',
+        'Academic Year (e.g. 2026-2027)': '2026-2027',
+        'Tuition Fee Amount (Optional)': 15000
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Bulk Import Format');
+    XLSX.writeFile(workbook, 'student_bulk_import_template.xlsx');
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBulkError('');
+    setBulkResult('');
+    setParsedStudents([]);
+    setUploadErrors([]);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        if (jsonData.length === 0) {
+          setBulkError('The uploaded file contains no data rows.');
+          return;
+        }
+
+        const headerMapping = {
+          'Admission Number': 'admissionNumber',
+          'Student Name': 'name',
+          'Gender': 'gender',
+          'Date of Birth (YYYY-MM-DD)': 'dob',
+          'School Board (CBSE/ICSE)': 'schoolType',
+          'Class': 'class',
+          'Section': 'section',
+          'Roll Number': 'rollNumber',
+          'Father Name': 'fatherName',
+          'Mother Name': 'motherName',
+          'Parent Mobile': 'parentMobile',
+          'Parent Email': 'email',
+          'Residential Address': 'address',
+          'Academic Year (e.g. 2026-2027)': 'academicYear',
+          'Tuition Fee Amount (Optional)': 'tuitionFeeAmount'
+        };
+
+        // Validate headers are present in the sheet
+        const excelKeys = Object.keys(jsonData[0]);
+        const missingHeaders = Object.keys(headerMapping).filter(h => !excelKeys.includes(h));
+        if (missingHeaders.length > 5) { // Allow slight format mismatch but block totally unrelated spreadsheets
+          setBulkError(`Format mismatch. Missing spreadsheet columns: ${missingHeaders.slice(0, 3).join(', ')}...`);
+          return;
+        }
+
+        const validatedList = [];
+        const errorList = [];
+
+        jsonData.forEach((row, idx) => {
+          const student = {};
+          const rowErrors = [];
+          const rowNum = idx + 2;
+
+          Object.entries(headerMapping).forEach(([excelHeader, key]) => {
+            let val = row[excelHeader] !== undefined ? String(row[excelHeader]).trim() : '';
+            
+            if (key === 'gender') {
+              if (val) {
+                val = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+              }
+            }
+            if (key === 'schoolType') {
+              val = val.toUpperCase();
+            }
+
+            student[key] = val;
+          });
+
+          const requiredFields = {
+            admissionNumber: 'Admission Number',
+            name: 'Student Name',
+            gender: 'Gender',
+            dob: 'Date of Birth (YYYY-MM-DD)',
+            schoolType: 'School Board (CBSE/ICSE)',
+            class: 'Class',
+            section: 'Section',
+            rollNumber: 'Roll Number',
+            fatherName: "Father's Name",
+            motherName: "Mother's Name",
+            parentMobile: 'Parent Mobile',
+            address: 'Residential Address',
+            academicYear: 'Academic Year'
+          };
+
+          Object.entries(requiredFields).forEach(([key, label]) => {
+            if (!student[key]) {
+              rowErrors.push(`Missing field: ${label}`);
+            }
+          });
+
+          if (student.dob) {
+            // Check if dob is excel numeric date or string
+            if (/^\d+$/.test(student.dob)) {
+              // Convert excel date serial number to string
+              const utc_days = Math.floor(Number(student.dob) - 25569);
+              const dateVal = new Date(utc_days * 86400 * 1000);
+              student.dob = dateVal.toISOString().split('T')[0];
+            } else {
+              const dateVal = new Date(student.dob);
+              if (isNaN(dateVal.getTime())) {
+                rowErrors.push('Invalid Date format. Use YYYY-MM-DD.');
+              }
+            }
+          }
+
+          if (student.schoolType && !['CBSE', 'ICSE'].includes(student.schoolType)) {
+            rowErrors.push('Invalid Board. Use CBSE or ICSE.');
+          }
+
+          if (student.gender && !['Male', 'Female', 'Other'].includes(student.gender)) {
+            rowErrors.push('Invalid Gender. Use Male, Female, or Other.');
+          }
+
+          if (student.parentMobile && !/^\d+$/.test(student.parentMobile)) {
+            rowErrors.push('Mobile must be numbers only.');
+          }
+
+          if (!student.tuitionFeeAmount) {
+            if (student.schoolType === 'CBSE') {
+              student.tuitionFeeAmount = 12000;
+            } else if (student.schoolType === 'ICSE') {
+              student.tuitionFeeAmount = 15000;
+            }
+          } else {
+            student.tuitionFeeAmount = Number(student.tuitionFeeAmount);
+            if (isNaN(student.tuitionFeeAmount) || student.tuitionFeeAmount < 0) {
+              rowErrors.push('Tuition Fee must be positive number.');
+            }
+          }
+
+          const isValid = rowErrors.length === 0;
+          validatedList.push({
+            rowNumber: rowNum,
+            data: student,
+            errors: rowErrors,
+            valid: isValid
+          });
+
+          if (!isValid) {
+            errorList.push(`Row ${rowNum}: ${rowErrors.join(' | ')}`);
+          }
+        });
+
+        setParsedStudents(validatedList);
+        setUploadErrors(errorList);
+      } catch (err) {
+        console.error(err);
+        setBulkError('Failed to parse spreadsheet file. Please check format.');
+      }
+    };
+    
+    reader.readAsArrayBuffer(file);
+  };
+
   const handleBulkImportSubmit = async (e) => {
     e.preventDefault();
     setBulkError('');
     setBulkResult('');
-    
-    let parsedData;
-    try {
-      parsedData = JSON.parse(bulkJson);
-    } catch (err) {
-      setBulkError('Invalid JSON format. Please check syntax (brackets, commas, quotes).');
+
+    if (parsedStudents.length === 0) {
+      setBulkError('Please upload a spreadsheet with student rows.');
       return;
     }
 
-    if (!Array.isArray(parsedData)) {
-      setBulkError('Data must be a JSON array of student objects.');
+    const invalidRows = parsedStudents.filter(s => !s.valid);
+    if (invalidRows.length > 0) {
+      setBulkError(`Please correct the ${invalidRows.length} invalid rows before importing.`);
       return;
     }
 
     setBulkSubmitting(true);
     try {
-      const res = await api.post('/students/import', { students: parsedData });
-      setBulkResult(`Success! Imported ${res.successCount} students. ${res.failCount} failed.`);
-      setBulkJson('');
+      const studentPayload = parsedStudents.map(s => s.data);
+      const res = await api.post('/students/import', { 
+        students: studentPayload,
+        overwriteConflicts
+      });
+      
+      setBulkResult(`Processed: ${res.successCount} imported/updated successfully. ${res.failCount} skipped/failed.`);
+      if (res.errors && res.errors.length > 0) {
+        setUploadErrors(res.errors);
+      } else {
+        setParsedStudents([]);
+        setUploadErrors([]);
+      }
       fetchStats();
+      fetchStudents();
     } catch (err) {
-      setBulkError(err.message || 'Import failed.');
+      setBulkError(err.message || 'Bulk student import failed.');
     } finally {
       setBulkSubmitting(false);
     }
@@ -658,62 +891,170 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
           </div>
 
           {/* Bulk Importer */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
-            <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">
-              Bulk Student Importer (JSON)
-            </h3>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-premium space-y-5">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-100 pb-3 gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">
+                  Bulk Student Spreadsheet Importer
+                </h3>
+                <p className="text-[10px] text-slate-450 mt-0.5">Ingest multiple student records at once via Excel spreadsheet format</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownloadTemplate}
+                className="inline-flex items-center space-x-1.5 py-2 px-4 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer self-start sm:self-auto"
+              >
+                <Download className="h-4 w-4 text-slate-500" />
+                <span>Download Sample Excel Template</span>
+              </button>
+            </div>
             
-            <form onSubmit={handleBulkImportSubmit} className="space-y-4">
-              <div className="text-xs text-slate-500 bg-slate-50 p-4 border border-slate-250 rounded-xl flex items-start space-x-2">
+            <div className="space-y-4">
+              <div className="text-xs text-slate-500 bg-indigo-50/50 p-4 border border-indigo-200/40 rounded-xl flex items-start space-x-2.5">
                 <Info className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-slate-700">Paste JSON array configuration payload:</p>
-                  <p className="mt-1">Provide a JSON array containing records with all required student details. An example layout is shown below.</p>
-                  <pre className="bg-slate-900 text-slate-300 p-2.5 rounded-lg text-[10px] mt-2 font-mono overflow-x-auto max-w-full">
-{`[
-  {
-    "admissionNumber": "ADM26991",
-    "name": "Jane Doe",
-    "gender": "Female",
-    "dob": "2012-04-18",
-    "schoolType": "CBSE",
-    "class": "Class 10",
-    "section": "A",
-    "rollNumber": "120",
-    "fatherName": "John Doe",
-    "motherName": "Mary Doe",
-    "parentMobile": "9988776655",
-    "address": "45 Lakeview St, Bangalore",
-    "academicYear": "2026-2027",
-    "tuitionFeeAmount": 15000
-  }
-]`}
-                  </pre>
+                  <p className="font-bold text-slate-800">Spreadsheet Ingestion Guidelines:</p>
+                  <p className="mt-1 leading-normal">
+                    Download the official template above, fill out all student details, and upload the sheet below. CBSE student tuition structures automatically default to <strong>₹12,000</strong> and ICSE to <strong>₹15,000</strong> if left blank. Gender must be Male, Female, or Other.
+                  </p>
                 </div>
               </div>
 
-              <div>
-                <textarea
-                  value={bulkJson}
-                  onChange={(e) => setBulkJson(e.target.value)}
-                  placeholder="[{ ... }]"
-                  rows={6}
-                  className="w-full border border-slate-200 rounded-xl p-3.5 text-xs font-mono focus:outline-none focus:border-indigo-600 bg-slate-50/30"
+              {/* Excel Drag & Drop Picker Zone */}
+              <div 
+                className={`relative border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                  dragActive 
+                    ? 'border-indigo-600 bg-indigo-50/15' 
+                    : 'border-slate-200 hover:border-indigo-400 bg-slate-50/20 hover:bg-slate-50/50'
+                }`}
+                onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragActive(false);
+                  if (e.dataTransfer.files) {
+                    handleFileUpload({ target: { files: e.dataTransfer.files } });
+                  }
+                }}
+              >
+                <input 
+                  type="file" 
+                  id="excel-file-upload" 
+                  accept=".xlsx, .xls, .csv" 
+                  onChange={handleFileUpload}
+                  className="hidden" 
                 />
+                <label htmlFor="excel-file-upload" className="cursor-pointer flex flex-col items-center">
+                  <FileSpreadsheet className="h-10 w-10 text-indigo-500 mb-2" />
+                  <span className="text-xs font-bold text-slate-800">
+                    Click to select file or drag & drop student sheet
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-1">Supports Microsoft Excel (.xlsx, .xls) and CSV files</span>
+                </label>
               </div>
 
-              <div className="flex items-center justify-between">
-                {bulkError && <p className="text-xs text-rose-500 font-semibold">{bulkError}</p>}
-                {bulkResult && <p className="text-xs text-emerald-600 font-semibold">{bulkResult}</p>}
+              {/* Overwrite conflicts settings */}
+              <div className="flex items-center space-x-2.5 p-3.5 bg-slate-50 border border-slate-150 rounded-2xl text-xs max-w-lg">
                 <button
-                  type="submit"
-                  disabled={bulkSubmitting || !bulkJson.trim()}
-                  className="px-4.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md transition-colors disabled:opacity-50 cursor-pointer ml-auto"
+                  type="button"
+                  onClick={() => setOverwriteConflicts(!overwriteConflicts)}
+                  className="text-indigo-600 hover:text-indigo-800 transition-colors focus:outline-none shrink-0"
                 >
-                  {bulkSubmitting ? 'Importing...' : 'Submit Bulk Import'}
+                  {overwriteConflicts ? (
+                    <ToggleRight className="h-6.5 w-6.5 text-indigo-650" />
+                  ) : (
+                    <ToggleLeft className="h-6.5 w-6.5 text-slate-400" />
+                  )}
                 </button>
+                <div>
+                  <p className="font-bold text-slate-850">Overwrite existing records</p>
+                  <p className="text-[10px] text-slate-450 mt-0.5">If matching Admission Numbers already exist, update their profiles with the Excel values instead of skipping.</p>
+                </div>
               </div>
-            </form>
+
+              {/* Excel Preview Grid */}
+              {parsedStudents.length > 0 && (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden space-y-3 p-4 bg-slate-50/30">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span className="text-xs font-extrabold text-slate-800">
+                      Parsed Rows Summary ({parsedStudents.length} rows detected)
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      parsedStudents.every(s => s.valid) 
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-250'
+                        : 'bg-rose-50 text-rose-700 border border-rose-250'
+                    }`}>
+                      {parsedStudents.filter(s => s.valid).length} / {parsedStudents.length} Valid
+                    </span>
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto border border-slate-200/70 rounded-xl bg-white scrollbar-thin">
+                    <table className="min-w-full text-left text-xs divide-y divide-slate-150">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-455 font-bold uppercase tracking-wider text-[9px] sticky top-0 z-10 border-b border-slate-150">
+                          <th className="py-2.5 px-3 bg-slate-50">Row</th>
+                          <th className="py-2.5 px-3 bg-slate-50">Admission No</th>
+                          <th className="py-2.5 px-3 bg-slate-50">Name</th>
+                          <th className="py-2.5 px-3 bg-slate-50">Board</th>
+                          <th className="py-2.5 px-3 bg-slate-50">Class-Sec</th>
+                          <th className="py-2.5 px-3 bg-slate-50">Validation</th>
+                          <th className="py-2.5 px-3 bg-slate-50">Notes / Errors</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {parsedStudents.map((item) => (
+                          <tr key={item.rowNumber} className="hover:bg-slate-50/50">
+                            <td className="py-2 px-3 font-semibold text-slate-400">{item.rowNumber}</td>
+                            <td className="py-2 px-3 font-mono font-bold text-slate-900">{item.data.admissionNumber || 'N/A'}</td>
+                            <td className="py-2 px-3 font-bold text-slate-800">{item.data.name || 'N/A'}</td>
+                            <td className="py-2 px-3 font-semibold text-slate-600">{item.data.schoolType || 'N/A'}</td>
+                            <td className="py-2 px-3 font-semibold">{item.data.class ? `${item.data.class}-${item.data.section}` : 'N/A'}</td>
+                            <td className="py-2 px-3">
+                              {item.valid ? (
+                                <Check className="h-4.5 w-4.5 text-emerald-500 bg-emerald-50 border border-emerald-200 rounded p-0.5" />
+                              ) : (
+                                <X className="h-4.5 w-4.5 text-rose-500 bg-rose-50 border border-rose-200 rounded p-0.5" />
+                              )}
+                            </td>
+                            <td className={`py-2 px-3 text-[10px] ${item.valid ? 'text-slate-450 italic' : 'text-rose-600 font-medium'}`}>
+                              {item.valid ? 'Ready to import' : item.errors.join(' | ')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Status and submit actions */}
+              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                <div className="max-w-md shrink pr-4">
+                  {bulkError && <p className="text-xs font-semibold text-rose-500 bg-rose-50 p-2 border border-rose-200 rounded-lg">{bulkError}</p>}
+                  {bulkResult && <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 p-2 border border-emerald-200 rounded-lg">{bulkResult}</p>}
+                </div>
+
+                <div className="flex space-x-2 shrink-0">
+                  {parsedStudents.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setParsedStudents([]); setUploadErrors([]); setBulkError(''); setBulkResult(''); }}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Clear File
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleBulkImportSubmit}
+                    disabled={bulkSubmitting || parsedStudents.length === 0 || parsedStudents.some(s => !s.valid)}
+                    className="px-4.5 py-2 bg-indigo-600 hover:bg-indigo-550 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl text-xs font-semibold shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {bulkSubmitting ? 'Importing Data...' : 'Confirm Bulk Import'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>

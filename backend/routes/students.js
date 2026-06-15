@@ -210,11 +210,40 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
 
       const existing = await models.Student.findOne({ admissionNumber: s.admissionNumber });
       if (existing) {
-        failCount++;
-        errors.push(`Row ${i + 1}: Admission number ${s.admissionNumber} already exists.`);
-        continue;
+        if (req.body.overwriteConflicts) {
+          const baseTuition = s.schoolType === 'CBSE' ? 12000 : 15000;
+          const feeAmount = Number(s.tuitionFeeAmount) || baseTuition;
+          
+          await models.Student.updateOne({ admissionNumber: s.admissionNumber }, {
+            name: s.name,
+            gender: s.gender,
+            dob: new Date(s.dob),
+            schoolType: s.schoolType,
+            class: s.class,
+            section: s.section,
+            rollNumber: s.rollNumber,
+            fatherName: s.fatherName,
+            motherName: s.motherName,
+            parentMobile: s.parentMobile,
+            email: s.email || '',
+            address: s.address,
+            academicYear: s.academicYear,
+            ...(existing.tuitionFee.amountPaid === 0 ? {
+              'tuitionFee.feeAmount': feeAmount,
+              'tuitionFee.totalAmount': feeAmount,
+              'tuitionFee.balanceAmount': feeAmount
+            } : {})
+          });
+          successCount++;
+          continue;
+        } else {
+          failCount++;
+          errors.push(`Row ${i + 1}: Admission number ${s.admissionNumber} already registered.`);
+          continue;
+        }
       }
 
+      const studentId = await generateStudentId();
       const baseTuition = s.schoolType === 'CBSE' ? 12000 : 15000;
       const feeAmount = Number(s.tuitionFeeAmount) || baseTuition;
 
