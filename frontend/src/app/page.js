@@ -120,7 +120,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070B16] text-slate-100 flex flex-col lg:flex-row relative font-sans overflow-hidden">
+    <div className="min-h-screen lg:h-screen bg-[#070B16] text-slate-100 flex flex-col lg:flex-row relative font-sans overflow-hidden">
       
       {/* Background radial effects */}
       <div className="absolute top-[-25%] left-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-600/10 blur-[130px] pointer-events-none" />
@@ -130,7 +130,7 @@ export default function LoginPage() {
       {/* ========================================================
           LEFT COLUMN: Premium Branding, Workflow & Stats Panel
           ======================================================== */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] bg-gradient-to-br from-indigo-950/20 to-slate-950/40 border-r border-white/5 flex-col justify-between p-12 relative z-10 overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] lg:h-screen bg-gradient-to-br from-indigo-950/20 to-slate-950/40 border-r border-white/5 flex-col justify-between p-8 xl:p-12 relative z-10 overflow-hidden">
         
         {/* Top Header */}
         <div className="flex items-center space-x-3">
@@ -146,7 +146,7 @@ export default function LoginPage() {
         </div>
 
         {/* Center Contents: Headline & Interactive Visual Pipeline */}
-        <div className="my-auto py-12 space-y-12">
+        <div className="my-auto py-6 xl:py-10 space-y-8 xl:space-y-10">
           
           <div className="space-y-4">
             <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight leading-tight text-white">
@@ -167,7 +167,7 @@ export default function LoginPage() {
               Automated Flow Pipeline
             </p>
             
-            <div className="space-y-3 max-w-sm">
+            <div className="space-y-2.5 max-w-sm">
               {[
                 { title: 'Tuition Department', desc: 'Tuition Fee Verification & Ledger Balance', icon: Receipt, active: true },
                 { title: 'Book Department', desc: 'Issued Book Inventory & Checklist Verification', icon: BookOpen, active: true },
@@ -186,7 +186,7 @@ export default function LoginPage() {
                         <Icon className="h-4 w-4" />
                       </div>
                       {idx < 3 && (
-                        <div className="w-[1px] h-8 bg-gradient-to-b from-white/10 to-transparent mt-1" />
+                        <div className="w-[1px] h-6 bg-gradient-to-b from-white/10 to-transparent mt-1" />
                       )}
                     </div>
                     <div className="pt-0.5">
@@ -236,10 +236,10 @@ export default function LoginPage() {
       {/* ========================================================
           RIGHT COLUMN: Dynamic Auth Form & Workspace Selector
           ======================================================== */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 md:p-24 relative z-10">
+      <div className="flex-1 flex flex-col justify-start lg:justify-center items-center lg:h-screen p-6 sm:p-8 lg:p-8 xl:p-12 relative z-10 overflow-y-auto">
         
         {/* Mobile branding header (visible only on mobile/tablet) */}
-        <div className="lg:hidden flex flex-col items-center text-center space-y-2 mb-8">
+        <div className="lg:hidden flex flex-col items-center text-center space-y-2 mb-5 mt-2">
           <div className="inline-flex items-center justify-center p-2.5 bg-gradient-to-tr from-indigo-500 to-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/20 mb-1">
             <GraduationCap className="h-7 w-7 text-white" />
           </div>
@@ -252,7 +252,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card Panel */}
-        <div className="w-full max-w-[420px] space-y-6">
+        <div className="w-full max-w-[420px] space-y-4 lg:-translate-y-4">
           
           <div className="space-y-2 text-center lg:text-left">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -264,9 +264,9 @@ export default function LoginPage() {
           </div>
 
           <div className="glass-panel-dark rounded-3xl shadow-2xl shadow-black/80 border border-white/5 overflow-hidden transition-all duration-300">
-            <div className="p-7 sm:p-9 space-y-6">
+            <div className="p-6 sm:p-8 space-y-5">
               
-              <form className="space-y-4" onSubmit={handleSubmit}>
+              <form className="space-y-3.5" onSubmit={handleSubmit}>
                 {error && (
                   <div className="rounded-xl bg-rose-500/10 p-3 border border-rose-500/25 flex items-start space-x-2 text-rose-300 text-xs animate-shake">
                     <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
@@ -290,7 +290,7 @@ export default function LoginPage() {
                       readOnly={typingActive}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className={`block w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 hover:border-white/15 focus:border-indigo-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-xs transition-all ${
+                      className={`block w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 hover:border-white/15 focus:border-indigo-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-xs transition-all ${
                         typingActive ? 'cursor-not-allowed opacity-80' : ''
                       }`}
                       placeholder="e.g. admin"
@@ -314,7 +314,7 @@ export default function LoginPage() {
                       readOnly={typingActive}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className={`block w-full pl-10 pr-10 py-3 bg-white/5 border border-white/10 hover:border-white/15 focus:border-indigo-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-xs transition-all ${
+                      className={`block w-full pl-10 pr-10 py-2.5 bg-white/5 border border-white/10 hover:border-white/15 focus:border-indigo-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-xs transition-all ${
                         typingActive ? 'cursor-not-allowed opacity-80' : ''
                       }`}
                       placeholder="••••••••"
@@ -339,7 +339,7 @@ export default function LoginPage() {
                   id="submit-btn"
                   type="submit"
                   disabled={submitting || typingActive}
-                  className="w-full flex justify-center items-center py-3 px-4 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 disabled:from-indigo-950 disabled:to-indigo-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-[#070B16] transition-all duration-200 shadow-lg shadow-indigo-600/10 cursor-pointer hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed"
+                  className="w-full flex justify-center items-center py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 disabled:from-indigo-950 disabled:to-indigo-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-[#070B16] transition-all duration-200 shadow-lg shadow-indigo-600/10 cursor-pointer hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -353,7 +353,7 @@ export default function LoginPage() {
               </form>
 
               {/* Quick Preset Credentials */}
-              <div className="pt-5 border-t border-white/5 space-y-4">
+              <div className="pt-4 border-t border-white/5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
                     Quick-Access presets
@@ -381,7 +381,7 @@ export default function LoginPage() {
                         type="button"
                         disabled={submitting || typingActive}
                         onClick={() => handleQuickLogin(p.id)}
-                        className={`flex items-center space-x-2 p-2.5 border rounded-xl text-left transition-all duration-200 ${
+                        className={`flex items-center space-x-2 p-2 border rounded-xl text-left transition-all duration-200 ${
                           isActive 
                             ? 'border-indigo-500 bg-indigo-500/10 scale-[0.98]' 
                             : 'border-white/5 bg-white/[0.01] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed'

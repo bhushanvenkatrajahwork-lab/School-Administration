@@ -125,7 +125,7 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
     // Workflow transition check
     const oldStudent = JSON.parse(JSON.stringify(student));
 
-    if (status === 'Paid') {
+    if (status === 'Paid' || status === 'Partial') {
       student.clearanceStatus = 'BOOKS_PENDING';
     }
 
@@ -161,13 +161,13 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
       updatedTuition
     );
 
-    if (status === 'Paid') {
+    if (status === 'Paid' || status === 'Partial') {
       // Create RequestQueue record for Book Department
       await models.RequestQueue.create({
         student: studentId,
         department: 'BOOK_DEPT',
         status: 'PENDING',
-        remarks: 'Tuition cleared. Routed automatically.'
+        remarks: 'Tuition fee payment recorded. Routed automatically.'
       });
 
       // Write workflow transitions logs
@@ -175,14 +175,14 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
         'SYSTEM',
         'STUDENT_WORKFLOW_FORWARDED',
         studentId,
-        `Student ${student.name} tuition status marked cleared. Workflow forwarded to Book Department.`,
+        `Student ${student.name} tuition fee payment recorded. Workflow forwarded to Book Department.`,
         oldStudent,
         student
       );
 
       await createNotification(
         'New Book Clearance Request',
-        `${student.name} (${student.studentId}) has cleared Tuition Fees and is queued for Book clearance.`,
+        `${student.name} (${student.studentId}) has paid Tuition Fees and is queued for Book clearance.`,
         ['SUPER_ADMIN', 'BOOK_DEPT']
       );
     }

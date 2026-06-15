@@ -157,8 +157,13 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
     // Calculate details
     const totalFee = Number(feeAmount);
     const amtPaid = Number(amountPaid);
+
+    if (amtPaid !== totalFee) {
+      return res.status(400).json({ message: 'Partial payment is not allowed for Book Department. Full payment is required.' });
+    }
+
     const balance = totalFee - amtPaid;
-    const status = balance <= 0 ? 'Paid' : (amtPaid > 0 ? 'Partial' : 'Pending');
+    const status = 'Paid';
 
     const oldBookFee = JSON.parse(JSON.stringify(student.bookFee || {}));
 
@@ -248,6 +253,20 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error processing book distribution' });
+  }
+});
+
+// @route   GET /api/fees/books/requests
+// @desc    Get all requests in the request queue for Book Department
+// @access  Private
+router.get('/requests', authenticate, async (req, res) => {
+  try {
+    const requests = await models.RequestQueue.find({
+      department: 'BOOK_DEPT'
+    }).populate('student');
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

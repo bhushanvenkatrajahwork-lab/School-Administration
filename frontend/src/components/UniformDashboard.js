@@ -1,14 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../utils/api';
-import { Shirt, Users, CheckCircle, Clock, Check, X, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Shirt, Users, CheckCircle, Clock, Check, X, AlertCircle, Loader2, User, Mail, Shield, ArrowRight } from 'lucide-react';
 
-export default function UniformDashboard() {
+export default function UniformDashboard({ activeTab, setActiveTab }) {
+  const { user } = useAuth();
+  const isSubmittingRef = useRef(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [queue, setQueue] = useState([]);
   const [queueLoading, setQueueLoading] = useState(true);
+  const [successMsg, setSuccessMsg] = useState('');
 
   // Reject dialog state
   const [rejectId, setRejectId] = useState(null);
@@ -110,16 +114,13 @@ export default function UniformDashboard() {
   // Handle form submission
   const handleDistributionSubmit = async (e) => {
     e.preventDefault();
-    if (amountPaid === '' || Number(amountPaid) < 0) {
-      setFormError('Please input a valid uniform fee paid amount');
+    if (isSubmittingRef.current) return;
+    if (Number(amountPaid) !== uniformFeeAmount) {
+      setFormError(`Uniform fee must be paid in full (₹${uniformFeeAmount.toLocaleString()}). Partial payment is not allowed.`);
       return;
     }
 
-    if (Number(amountPaid) > uniformFeeAmount) {
-      setFormError('Amount paid exceeds standard uniform fee amount');
-      return;
-    }
-
+    isSubmittingRef.current = true;
     setFormSubmitting(true);
     setFormError('');
 
@@ -133,16 +134,189 @@ export default function UniformDashboard() {
         paymentMethod
       });
 
-      // Clear states & Refresh
-      setActiveRequest(null);
-      fetchStats();
-      fetchQueue();
+      setSuccessMsg('Uniform clearance completed successfully!');
+      setTimeout(() => {
+        setActiveRequest(null);
+        setSuccessMsg('');
+        fetchStats();
+        fetchQueue();
+      }, 1500);
     } catch (err) {
       setFormError(err.message || 'Uniform distribution submission failed');
     } finally {
+      isSubmittingRef.current = false;
       setFormSubmitting(false);
     }
   };
+
+  if (activeTab === 'uniform-overview') {
+    return (
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-[#0B192C] to-[#1E3E62] rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
+          <div className="space-y-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-rose-400 bg-rose-400/10 border border-rose-400/20 px-3 py-1 rounded-full">
+              Uniform Desk Workspace
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight">Welcome back, {user?.name || 'Store Manager'}!</h2>
+            <p className="text-xs text-slate-300 max-w-xl">
+              Monitor school uniform clearances, issue configured class sets, and sign off uniform clearance queues.
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab('uniform-queue')}
+            className="flex items-center space-x-2 bg-rose-550 bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-3 rounded-2xl text-xs transition-all shadow-lg hover:shadow-rose-600/10 cursor-pointer hover:scale-[1.01]"
+          >
+            <span>Process Clearance Queue</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Neat Login Details Card */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-premium space-y-5 flex flex-col justify-between">
+            <div>
+              <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4.5 uppercase tracking-wider">
+                Staff Account Profile
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Display Name</span>
+                    <span className="text-xs font-extrabold text-slate-800">{user?.name}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Shirt className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Login ID / Username</span>
+                    <span className="text-xs font-semibold text-slate-700">{user?.username}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Email Address</span>
+                    <span className="text-xs font-medium text-slate-650 truncate max-w-[180px] block">{user?.email}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Department Clearance Role</span>
+                    <span className="text-xs font-extrabold text-slate-800">Uniform Department</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+              <div className="flex items-center space-x-1">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-emerald-600">Secure session verified</span>
+              </div>
+              <span>Year: 2026-2027</span>
+            </div>
+          </div>
+
+          {/* Right: Metrics & Pending queue preview */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'Pending Queue', val: stats?.pendingRequests ?? 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50/80 border-amber-100/50' },
+                { label: 'Approved Actions', val: stats?.approvedRequests ?? 0, icon: CheckCircle, color: 'text-indigo-600', bg: 'bg-indigo-50/80 border-indigo-100/50' },
+                { label: 'Cleared Uniforms', val: stats?.completedDistributions ?? 0, icon: Shirt, color: 'text-rose-600', bg: 'bg-rose-50/80 border-rose-100/50' }
+              ].map((c, i) => {
+                const Icon = c.icon;
+                return (
+                  <div key={i} className="bg-white p-4.5 rounded-3xl border border-slate-200/60 shadow-premium hover-lift flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-xl border shrink-0 ${c.bg} ${c.color}`}>
+                      <Icon className="h-4.5 w-4.5" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{c.label}</p>
+                      <p className="text-lg font-extrabold text-slate-800 mt-1.5 leading-none">{c.val}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Queue Preview Card */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-premium space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Queue snapshot</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Students waiting for school uniform clearances</p>
+                </div>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-650 border border-slate-200/50">
+                  {queue.length} Pending
+                </span>
+              </div>
+
+              {queueLoading ? (
+                <div className="h-32 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 text-rose-500 animate-spin" />
+                </div>
+              ) : queue.length === 0 ? (
+                <div className="py-6 text-center text-slate-500 text-xs">
+                  <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+                  <p className="font-semibold text-slate-650">No uniform clearance requests in queue.</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Good job! Everything is caught up.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {queue.slice(0, 3).map(req => (
+                    <div key={req._id} className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-2xl text-xs transition-colors">
+                      <div>
+                        <p className="font-bold text-slate-800">{req.student?.name}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          ID: {req.student?.studentId} | Class: {req.student?.class}-{req.student?.section} | Board: {req.student?.schoolType}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setActiveTab('uniform-queue');
+                          handleAcceptClick(req);
+                        }}
+                        className="inline-flex items-center space-x-1 font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-2 rounded-xl transition-colors cursor-pointer text-[10px]"
+                      >
+                        <Check className="h-3 w-3" />
+                        <span>Accept Request</span>
+                      </button>
+                    </div>
+                  ))}
+                  {queue.length > 3 && (
+                    <button
+                      onClick={() => setActiveTab('uniform-queue')}
+                      className="w-full text-center text-xs text-indigo-600 hover:text-indigo-800 font-bold pt-2 cursor-pointer block"
+                    >
+                      View all {queue.length} requests in queue →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -387,17 +561,31 @@ export default function UniformDashboard() {
                   <p className="text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-lg border border-red-200">{formError}</p>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={formSubmitting || classItems.length === 0}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {formSubmitting ? (
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  ) : (
-                    'Record Distribution & Complete Clearance'
-                  )}
-                </button>
+                {successMsg && (
+                  <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-center">{successMsg}</p>
+                )}
+
+                {successMsg ? (
+                  <button
+                    type="button"
+                    disabled={true}
+                    className="w-full flex justify-center py-2.5 px-4 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 bg-slate-100 cursor-not-allowed"
+                  >
+                    Uniform Clearance Completed (Fully Paid)
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={formSubmitting || classItems.length === 0}
+                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {formSubmitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      'Record Distribution & Complete Clearance'
+                    )}
+                  </button>
+                )}
               </div>
 
             </form>

@@ -305,9 +305,9 @@ export default function StudentHistory({ studentId, onBack }) {
                   {tuition ? (
                     <div className="mt-2 text-xs text-slate-500 space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                       <p>Total Fee: ₹{tuition.feeAmount} | Paid: ₹{tuition.amountPaid} | Balance: ₹{tuition.balanceAmount}</p>
-                      {tuition.status === 'Paid' && (
+                      {(tuition.status === 'Paid' || tuition.status === 'Partial') && (
                         <p className="text-[10px] text-slate-400">
-                          Cleared on {new Date(tuition.paymentDate).toLocaleDateString()} via {tuition.paymentMethod} (Ref: {tuition.transactionRef || 'N/A'})
+                          Payment recorded on {new Date(tuition.paymentDate).toLocaleDateString()} via {tuition.paymentMethod} (Ref: {tuition.transactionRef || 'N/A'})
                         </p>
                       )}
                     </div>
@@ -337,7 +337,7 @@ export default function StudentHistory({ studentId, onBack }) {
                       </span>
                     )}
                   </div>
-                  {books && books.status === 'Paid' ? (
+                  {books && (books.status === 'Paid' || books.status === 'Partial') ? (
                     <div className="mt-2 text-xs text-slate-500 space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                       <p>Book Fee: ₹{books.feeAmount} | Paid: ₹{books.amountPaid}</p>
                       <p className="font-semibold text-slate-700">Issued Books ({books.issuedBooks?.length || 0}):</p>
@@ -382,7 +382,7 @@ export default function StudentHistory({ studentId, onBack }) {
                       </span>
                     )}
                   </div>
-                  {uniform && uniform.status === 'Paid' ? (
+                  {uniform && (uniform.status === 'Paid' || uniform.status === 'Partial') ? (
                     <div className="mt-2 text-xs text-slate-500 space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                       <p>Uniform Fee: ₹{uniform.feeAmount} | Paid: ₹{uniform.amountPaid}</p>
                       <p className="font-semibold text-slate-700">Issued Uniform Items ({uniform.issuedItems?.length || 0}):</p>

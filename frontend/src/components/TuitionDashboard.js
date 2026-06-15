@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../utils/api';
-import { Receipt, Users, CheckCircle, Clock, TrendingUp, ShieldAlert, Loader2, FileDown, Check } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Receipt, Users, CheckCircle, Clock, TrendingUp, ShieldAlert, Loader2, FileDown, Check, User, Mail, Shield, ArrowRight, X, Search, AlertCircle } from 'lucide-react';
 
-export default function TuitionDashboard() {
+export default function TuitionDashboard({ activeTab, setActiveTab }) {
+  const { user } = useAuth();
+  const isSubmittingRef = useRef(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -138,6 +141,12 @@ export default function TuitionDashboard() {
     setLastPayment(null);
   };
 
+  // Interactive metrics modal states
+  const [selectedMetric, setSelectedMetric] = useState(null); // 'total' | 'paid' | 'pending' | 'collected' | 'outstanding'
+  const [metricDetailData, setMetricDetailData] = useState([]);
+  const [metricDetailLoading, setMetricDetailLoading] = useState(false);
+  const [metricSearchQuery, setMetricSearchQuery] = useState('');
+
   const calculateTotalAmount = () => {
     if (!feeDetails) return 0;
     return feeDetails.feeAmount - Number(discount) + Number(fine);
@@ -153,6 +162,7 @@ export default function TuitionDashboard() {
 
   const handleCollectPayment = async (e) => {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
     if (!selectedStudentId || amountPaidInput === '' || Number(amountPaidInput) < 0) {
       setErrorMsg('Please specify a valid payment amount');
       return;
@@ -164,6 +174,7 @@ export default function TuitionDashboard() {
       return;
     }
 
+    isSubmittingRef.current = true;
     setSubmitting(true);
     setErrorMsg('');
     setSuccessMsg('');
@@ -189,6 +200,7 @@ export default function TuitionDashboard() {
     } catch (err) {
       setErrorMsg(err.message || 'Payment submission failed');
     } finally {
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -273,6 +285,217 @@ export default function TuitionDashboard() {
     printWindow.document.write(printContent);
     printWindow.document.close();
   };
+
+  const handleMetricCardClick = async (type) => {
+    setSelectedMetric(type);
+    setMetricDetailLoading(true);
+    setMetricDetailData([]);
+    setMetricSearchQuery('');
+    try {
+      let data = [];
+      if (type === 'total' || type === 'paid' || type === 'pending' || type === 'outstanding') {
+        const res = await api.get('/reports/tuition');
+        if (type === 'total') {
+          data = res;
+        } else if (type === 'paid') {
+          data = res.filter(r => r.status === 'Paid');
+        } else if (type === 'pending') {
+          data = res.filter(r => r.status !== 'Paid');
+        } else if (type === 'outstanding') {
+          data = res.filter(r => r.balanceAmount > 0);
+        }
+      } else if (type === 'collected') {
+        const res = await api.get('/reports/collections');
+        data = (res.payments || []).filter(p => p.feeType === 'Tuition');
+      }
+      setMetricDetailData(data);
+    } catch (err) {
+      console.error('Error fetching tuition metrics:', err);
+    } finally {
+      setMetricDetailLoading(false);
+    }
+  };
+
+  const getFilteredMetricData = () => {
+    if (!metricSearchQuery.trim()) return metricDetailData;
+    const q = metricSearchQuery.toLowerCase();
+    return metricDetailData.filter(item => {
+      if (selectedMetric === 'collected') {
+        return (
+          item.student?.name?.toLowerCase().includes(q) ||
+          item.student?.studentId?.toLowerCase().includes(q) ||
+          item.receiptNumber?.toLowerCase().includes(q) ||
+          item.paymentMethod?.toLowerCase().includes(q)
+        );
+      } else {
+        return (
+          item.student?.name?.toLowerCase().includes(q) ||
+          item.student?.studentId?.toLowerCase().includes(q) ||
+          item.student?.class?.toLowerCase().includes(q) ||
+          item.status?.toLowerCase().includes(q)
+        );
+      }
+    });
+  };
+
+  if (activeTab === 'tuition-overview') {
+    return (
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-[#0B192C] to-[#1E3E62] rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
+          <div className="space-y-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-400/10 border border-indigo-400/20 px-3 py-1 rounded-full">
+              Tuition Desk Workspace
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight">Welcome back, {user?.name || 'Accountant'}!</h2>
+            <p className="text-xs text-slate-300 max-w-xl">
+              Process annual course fee collections, apply authorized student discounts or fines, and verify outstanding clearance debts.
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab('tuition-collect')}
+            className="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-5 py-3 rounded-2xl text-xs transition-all shadow-lg hover:shadow-indigo-500/10 cursor-pointer hover:scale-[1.01]"
+          >
+            <span>Collect Tuition Fee</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Neat Login Details Card */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-premium space-y-5 flex flex-col justify-between">
+            <div>
+              <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4.5 uppercase tracking-wider">
+                Staff Account Profile
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Display Name</span>
+                    <span className="text-xs font-extrabold text-slate-800">{user?.name}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-amber-50 border border-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Login ID / Username</span>
+                    <span className="text-xs font-semibold text-slate-700">{user?.username}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-emerald-50 border border-emerald-100 text-emerald-650 rounded-xl flex items-center justify-center shrink-0">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Email Address</span>
+                    <span className="text-xs font-medium text-slate-600 truncate max-w-[180px] block">{user?.email}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3.5 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="h-10 w-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Department Clearance Role</span>
+                    <span className="text-xs font-extrabold text-slate-800">Tuition Fee Dept</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+              <div className="flex items-center space-x-1">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-emerald-600">Secure session verified</span>
+              </div>
+              <span>Year: 2026-2027</span>
+            </div>
+          </div>
+
+          {/* Right: Metrics & Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Quick Metrics */}
+            {statsLoading ? (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-20 bg-white border border-slate-200 rounded-3xl" />
+                ))}
+              </div>
+            ) : (
+              stats && (
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Total students', val: stats.totalStudents, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50/80 border-indigo-100/50', type: 'total' },
+                    { label: 'Fully Paid', val: stats.paidStudents, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50/80 border-emerald-100/50', type: 'paid' },
+                    { label: 'Pending Collections', val: stats.pendingStudents, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50/80 border-amber-100/50', type: 'pending' },
+                    { label: 'Collected amount', val: `₹${stats.collectedAmount.toLocaleString('en-IN')}`, icon: TrendingUp, color: 'text-teal-600', bg: 'bg-teal-50/80 border-teal-100/50', type: 'collected' },
+                    { label: 'Outstanding debts', val: `₹${stats.pendingAmount.toLocaleString('en-IN')}`, icon: ShieldAlert, color: 'text-rose-600', bg: 'bg-rose-50/80 border-rose-100/50', type: 'outstanding' }
+                  ].map((c, i) => {
+                    const Icon = c.icon;
+                    return (
+                      <div 
+                        key={i} 
+                        onClick={() => handleMetricCardClick(c.type)}
+                        className="bg-white p-4.5 rounded-3xl border border-slate-200/60 shadow-premium hover-lift flex items-center space-x-3.5 cursor-pointer hover:border-indigo-400/85 hover:shadow-lg transition-all"
+                      >
+                        <div className={`p-2.5 rounded-xl border shrink-0 ${c.bg} ${c.color}`}>
+                          <Icon className="h-4.5 w-4.5" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{c.label}</p>
+                          <p className="text-base font-extrabold text-slate-800 mt-1.5 leading-none">{c.val}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+
+            {/* Quick Guide Card */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-premium space-y-4">
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Operational Guidelines</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">Key processing rules for the Tuition Desk</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-1">
+                  <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 uppercase tracking-wider">
+                    Tuition Fees
+                  </span>
+                  <h4 className="font-bold text-slate-800 pt-1">Partial Payment Allowed</h4>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Students can pay tuition fees partially. Making any payment (partial or full) automatically places the student in the textbook queue for the librarian's clearance.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-1">
+                  <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 uppercase tracking-wider">
+                    Downstream Clearance
+                  </span>
+                  <h4 className="font-bold text-slate-800 pt-1">Books & Uniforms</h4>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Note that textbook and school uniform clearances strictly forbid partial payments. Students must pay for those materials in full at their respective distribution desks.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -573,7 +796,7 @@ export default function TuitionDashboard() {
                   </div>
                 )}
 
-                {feeDetails.status !== 'Paid' && (
+                {feeDetails.status !== 'Paid' ? (
                   <button
                     type="submit"
                     disabled={submitting}
@@ -585,12 +808,159 @@ export default function TuitionDashboard() {
                       'Record Payment & Forward Clearance'
                     )}
                   </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={true}
+                    className="w-full flex justify-center py-3 px-4 rounded-xl text-xs font-bold text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed"
+                  >
+                    Tuition Clearance Completed (Fully Paid)
+                  </button>
                 )}
               </div>
             </form>
           )}
         </div>
       </div>
+
+      {/* METRICS DETAILS MODAL */}
+      {selectedMetric && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-4xl overflow-hidden animate-slide-up my-8">
+            {/* Header */}
+            <div className="px-6 py-4.5 bg-[#0B192C] text-white flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-400/10 border border-indigo-400/20 px-2.5 py-0.5 rounded-full">
+                  Tuition Desk Analytics
+                </span>
+                <h4 className="text-base font-black mt-1">
+                  {selectedMetric === 'total' && 'Total Enrolled Tuition Records'}
+                  {selectedMetric === 'paid' && 'Fully Cleared Tuition Accounts'}
+                  {selectedMetric === 'pending' && 'Pending Tuition Accounts'}
+                  {selectedMetric === 'collected' && 'Tuition Payment Transactions Logs'}
+                  {selectedMetric === 'outstanding' && 'Outstanding Tuition Debts'}
+                </h4>
+              </div>
+              <button 
+                onClick={() => setSelectedMetric(null)} 
+                className="text-slate-400 hover:text-white transition-colors cursor-pointer p-1 rounded-lg hover:bg-white/5"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Search Bar */}
+              <div className="relative rounded-xl max-w-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Filter records below..."
+                  value={metricSearchQuery}
+                  onChange={(e) => setMetricSearchQuery(e.target.value)}
+                  className="block w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-slate-850 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-600 text-xs transition-all"
+                />
+              </div>
+
+              {/* Data Content */}
+              {metricDetailLoading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                </div>
+              ) : getFilteredMetricData().length === 0 ? (
+                <div className="h-64 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col justify-center items-center text-center p-4">
+                  <AlertCircle className="h-10 w-10 text-slate-300 mb-2.5" />
+                  <p className="text-xs text-slate-400 font-semibold">No records found matching filters.</p>
+                </div>
+              ) : (
+                <div className="max-h-[50vh] overflow-y-auto border border-slate-200/60 rounded-2xl shadow-inner scrollbar-thin">
+                  <table className="min-w-full text-left text-xs divide-y divide-slate-200">
+                    {/* Header */}
+                    {selectedMetric === 'collected' ? (
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[9px] sticky top-0 z-10 border-b border-slate-200/80">
+                          <th className="py-3 px-4 bg-slate-50">Receipt Number</th>
+                          <th className="py-3 px-4 bg-slate-50">Student ID</th>
+                          <th className="py-3 px-4 bg-slate-50">Student Name</th>
+                          <th className="py-3 px-4 bg-slate-50">Class-Sec</th>
+                          <th className="py-3 px-4 bg-slate-50">Amount Paid</th>
+                          <th className="py-3 px-4 bg-slate-50">Method</th>
+                          <th className="py-3 px-4 bg-slate-50">Payment Date</th>
+                        </tr>
+                      </thead>
+                    ) : (
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[9px] sticky top-0 z-10 border-b border-slate-200/80">
+                          <th className="py-3 px-4 bg-slate-50">Student ID</th>
+                          <th className="py-3 px-4 bg-slate-50">Student Name</th>
+                          <th className="py-3 px-4 bg-slate-50">Class-Sec</th>
+                          <th className="py-3 px-4 bg-slate-50">Admission No</th>
+                          <th className="py-3 px-4 bg-slate-50">Fee Amount</th>
+                          <th className="py-3 px-4 bg-slate-50">Paid Amount</th>
+                          <th className="py-3 px-4 bg-slate-50">Outstanding Balance</th>
+                          <th className="py-3 px-4 bg-slate-50">Status</th>
+                        </tr>
+                      </thead>
+                    )}
+
+                    {/* Body */}
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {getFilteredMetricData().map((item, index) => (
+                        <tr key={item._id || index} className="hover:bg-slate-50/50 transition-colors">
+                          {selectedMetric === 'collected' ? (
+                            <>
+                              <td className="py-3.5 px-4 font-bold text-slate-900">{item.receiptNumber}</td>
+                              <td className="py-3.5 px-4 font-mono text-slate-550">{item.student?.studentId || 'N/A'}</td>
+                              <td className="py-3.5 px-4 font-bold text-slate-800">{item.student?.name || 'Unknown'}</td>
+                              <td className="py-3.5 px-4">{item.student?.class ? `${item.student.class}-${item.student.section}` : 'N/A'}</td>
+                              <td className="py-3.5 px-4 font-extrabold text-slate-900">₹{item.amount.toLocaleString()}</td>
+                              <td className="py-3.5 px-4 font-medium text-slate-550">{item.paymentMethod}</td>
+                              <td className="py-3.5 px-4 text-slate-400">{new Date(item.paymentDate).toLocaleString()}</td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="py-3.5 px-4 font-mono text-slate-550">{item.student?.studentId}</td>
+                              <td className="py-3.5 px-4 font-bold text-slate-850">{item.student?.name}</td>
+                              <td className="py-3.5 px-4 font-bold text-slate-800">{item.student?.class} - {item.student?.section}</td>
+                              <td className="py-3.5 px-4 font-mono">{item.student?.admissionNumber}</td>
+                              <td className="py-3.5 px-4">₹{item.feeAmount?.toLocaleString()}</td>
+                              <td className="py-3.5 px-4">₹{item.amountPaid?.toLocaleString()}</td>
+                              <td className={`py-3.5 px-4 font-extrabold ${item.balanceAmount > 0 ? 'text-rose-600 bg-rose-50/30' : 'text-slate-800'}`}>₹{item.balanceAmount?.toLocaleString()}</td>
+                              <td className="py-3.5 px-4">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                  item.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-250' : 
+                                  item.status === 'Partial' ? 'bg-amber-50 text-amber-850 border border-amber-200' : 
+                                  'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
+                                  {item.status}
+                                </span>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Modal Footer */}
+              <div className="flex justify-end pt-3.5 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMetric(null)}
+                  className="py-2 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Close Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

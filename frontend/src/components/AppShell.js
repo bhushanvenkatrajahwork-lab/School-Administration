@@ -119,16 +119,19 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
       return [
         { id: 'tuition-overview', label: 'Fee Dashboard', icon: LayoutDashboard },
         { id: 'tuition-collect', label: 'Tuition Payment', icon: Receipt },
+        { id: 'history', label: 'Clearance History', icon: History },
       ];
     } else if (role === 'BOOK_DEPT') {
       return [
         { id: 'book-overview', label: 'Library Dashboard', icon: LayoutDashboard },
         { id: 'book-queue', label: 'Clearance Queue', icon: BookOpen },
+        { id: 'history', label: 'Clearance History', icon: History },
       ];
     } else if (role === 'UNIFORM_DEPT') {
       return [
         { id: 'uniform-overview', label: 'Uniform Dashboard', icon: LayoutDashboard },
         { id: 'uniform-queue', label: 'Clearance Queue', icon: Shirt },
+        { id: 'history', label: 'Clearance History', icon: History },
       ];
     }
     return [];

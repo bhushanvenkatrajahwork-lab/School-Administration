@@ -152,8 +152,13 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
     // Calculate details
     const totalFee = Number(feeAmount);
     const amtPaid = Number(amountPaid);
+
+    if (amtPaid !== totalFee) {
+      return res.status(400).json({ message: 'Partial payment is not allowed for Uniform Department. Full payment is required.' });
+    }
+
     const balance = totalFee - amtPaid;
-    const status = balance <= 0 ? 'Paid' : (amtPaid > 0 ? 'Partial' : 'Pending');
+    const status = 'Paid';
 
     const oldUniformFee = JSON.parse(JSON.stringify(student.uniformFee || {}));
 
@@ -235,6 +240,20 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error processing uniform distribution' });
+  }
+});
+
+// @route   GET /api/fees/uniforms/requests
+// @desc    Get all requests in the request queue for Uniform Department
+// @access  Private
+router.get('/requests', authenticate, async (req, res) => {
+  try {
+    const requests = await models.RequestQueue.find({
+      department: 'UNIFORM_DEPT'
+    }).populate('student');
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

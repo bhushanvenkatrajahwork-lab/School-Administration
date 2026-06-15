@@ -315,9 +315,9 @@ router.get('/:id/history', authenticate, async (req, res) => {
     const requests = await models.RequestQueue.find({ student: studentObjectId }).populate('actionedBy').sort({ createdAt: 1 });
     const audits = await models.AuditLog.find({ student: studentObjectId }).sort({ createdAt: -1 });
 
-    const tuitionData = student.tuitionFee ? { ...student.tuitionFee, student: studentObjectId } : null;
-    const bookData = student.bookFee ? { ...student.bookFee, student: studentObjectId } : null;
-    const uniformData = student.uniformFee ? { ...student.uniformFee, student: studentObjectId } : null;
+    const tuitionData = student.tuitionFee ? { ...(student.tuitionFee.toObject ? student.tuitionFee.toObject() : student.tuitionFee), student: studentObjectId } : null;
+    const bookData = student.bookFee ? { ...(student.bookFee.toObject ? student.bookFee.toObject() : student.bookFee), student: studentObjectId } : null;
+    const uniformData = student.uniformFee ? { ...(student.uniformFee.toObject ? student.uniformFee.toObject() : student.uniformFee), student: studentObjectId } : null;
 
     res.json({
       student,

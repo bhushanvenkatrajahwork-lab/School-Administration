@@ -9,6 +9,7 @@ import TuitionDashboard from '../../components/TuitionDashboard';
 import BookDashboard from '../../components/BookDashboard';
 import UniformDashboard from '../../components/UniformDashboard';
 import StudentHistory from '../../components/StudentHistory';
+import StudentHistoryRegistry from '../../components/StudentHistoryRegistry';
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -60,15 +61,28 @@ export default function DashboardPage() {
       );
     }
 
+    if (activeTab === 'history') {
+      return (
+        <StudentHistoryRegistry 
+          onOpenStudentHistory={(id) => setViewStudentHistoryId(id)} 
+        />
+      );
+    }
+
     const role = user.role;
     if (role === 'SUPER_ADMIN') {
-      return <AdminDashboard onOpenStudentHistory={(id) => setViewStudentHistoryId(id)} />;
+      return (
+        <AdminDashboard 
+          activeTab={activeTab} 
+          onOpenStudentHistory={(id) => setViewStudentHistoryId(id)} 
+        />
+      );
     } else if (role === 'TUITION_DEPT') {
-      return <TuitionDashboard />;
+      return <TuitionDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
     } else if (role === 'BOOK_DEPT') {
-      return <BookDashboard />;
+      return <BookDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
     } else if (role === 'UNIFORM_DEPT') {
-      return <UniformDashboard />;
+      return <UniformDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
     }
 
     return (
