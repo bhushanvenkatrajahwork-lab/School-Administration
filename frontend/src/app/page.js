@@ -53,9 +53,9 @@ export default function LoginPage() {
     };
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, u = username, p = password) => {
     if (e) e.preventDefault();
-    if (!username || !password) {
+    if (!u || !p) {
       setError('Please fill in all fields');
       return;
     }
@@ -63,7 +63,7 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      await login(username, password);
+      await login(u, p);
     } catch (err) {
       setError(err.message || 'Invalid username or password');
     } finally {
@@ -111,7 +111,7 @@ export default function LoginPage() {
 
             // Auto-submit with a small delay so user notices completion
             setTimeout(() => {
-              handleSubmit();
+              handleSubmit(null, targetUser, targetPass);
             }, 400);
           }
         }, 50);

@@ -686,6 +686,8 @@ export default function BookDashboard({ activeTab, setActiveTab }) {
           </div>
         </div>
       )}
+        </>
+      )}
 
       {/* METRICS DETAILS MODAL */}
       {selectedMetric && (
@@ -781,10 +783,10 @@ export default function BookDashboard({ activeTab, setActiveTab }) {
                               <>
                                 <td className="py-3.5 px-4 font-bold text-slate-900">{item.receiptNumber || 'N/A'}</td>
                                 <td className="py-3.5 px-4 font-extrabold text-slate-900">₹{item.amountPaid?.toLocaleString()}</td>
-                                <td className="py-3.5 px-4 text-slate-500 font-medium">
+                                <td className="py-3.5 px-4 text-slate-505 font-medium">
                                   <div className="flex flex-wrap gap-1 max-w-[200px]">
                                     {(item.booksIssued || []).map((b, bIdx) => (
-                                      <span key={bIdx} className="bg-slate-100 text-slate-600 text-[9px] px-1.5 py-0.5 rounded font-mono truncate">{b}</span>
+                                      <span key={bIdx} className="bg-slate-100 text-slate-655 text-[9px] px-1.5 py-0.5 rounded font-mono truncate">{b}</span>
                                     ))}
                                   </div>
                                 </td>
@@ -797,11 +799,11 @@ export default function BookDashboard({ activeTab, setActiveTab }) {
                             ) : selectedMetric === 'approved' ? (
                               <>
                                 <td className="py-3.5 px-4">
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-250">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-50 text-indigo-755 border border-indigo-250">
                                     {item.status}
                                   </span>
                                 </td>
-                                <td className="py-3.5 px-4 text-slate-500 italic truncate max-w-[150px]">{item.remarks || 'None'}</td>
+                                <td className="py-3.5 px-4 text-slate-505 italic truncate max-w-[150px]">{item.remarks || 'None'}</td>
                                 <td className="py-3.5 px-4 text-slate-400">{new Date(item.updatedAt || item.createdAt).toLocaleDateString()}</td>
                               </>
                             ) : (
@@ -840,8 +842,6 @@ export default function BookDashboard({ activeTab, setActiveTab }) {
             </div>
           </div>
         </div>
-      )}
-        </>
       )}
     </div>
   );

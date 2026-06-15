@@ -13,3 +13,6 @@ MONGODB_URI=mongodb+srv://bhushanvenkatrajahwork_db_user:[EMAIL_ADDRESS]/school_
 
 DATABASE_MODE=real  // Keep this 'real' for MongoDB
 PORT=5000
+
+EMAIL_USER=bhushanvenkatrajah.work@gmail.com
+EMAIL_PASS= wqfd qjol ervt hmtg

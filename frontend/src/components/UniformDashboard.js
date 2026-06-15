@@ -684,6 +684,8 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
           </div>
         </div>
       )}
+        </>
+      )}
 
       {/* METRICS DETAILS MODAL */}
       {selectedMetric && (
@@ -799,7 +801,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
                                     {item.status}
                                   </span>
                                 </td>
-                                <td className="py-3.5 px-4 text-slate-500 italic truncate max-w-[150px]">{item.remarks || 'None'}</td>
+                                <td className="py-3.5 px-4 text-slate-505 italic truncate max-w-[150px]">{item.remarks || 'None'}</td>
                                 <td className="py-3.5 px-4 text-slate-400">{new Date(item.updatedAt || item.createdAt).toLocaleDateString()}</td>
                               </>
                             ) : (
@@ -810,7 +812,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
                                   </span>
                                 </td>
                                 <td className="py-3.5 px-4">
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-850 border border-amber-200">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-855 border border-amber-200">
                                     {item.status || 'PENDING'}
                                   </span>
                                 </td>
@@ -838,8 +840,6 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
             </div>
           </div>
         </div>
-      )}
-        </>
       )}
     </div>
   );

@@ -3,6 +3,7 @@ const router = express.Router();
 const models = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 const { logAudit, createNotification } = require('../utils/helpers');
+const { sendReceiptEmail } = require('../utils/emailService');
 
 // @route   GET /api/fees/tuition/stats
 // @desc    Get Tuition Fee Dashboard statistics
@@ -149,6 +150,11 @@ router.post('/collect', authenticate, authorize(['TUITION_DEPT', 'SUPER_ADMIN'])
       paymentMethod,
       transactionRef: transactionRef || '',
       staffName: req.user.name
+    });
+
+    // Send receipt email immediately in background
+    sendReceiptEmail(payment, student).catch(err => {
+      console.error('[ERROR] Background receipt email task failed:', err);
     });
 
     // Write audit log for the payment transaction

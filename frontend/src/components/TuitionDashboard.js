@@ -520,15 +520,19 @@ export default function TuitionDashboard({ activeTab, setActiveTab }) {
         stats && (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label: 'Total students', val: stats.totalStudents, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50/80 border-indigo-100/50' },
-              { label: 'Fully Paid', val: stats.paidStudents, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50/80 border-emerald-100/50' },
-              { label: 'Pending Collections', val: stats.pendingStudents, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50/80 border-amber-100/50' },
-              { label: 'Collected amount', val: `₹${stats.collectedAmount.toLocaleString('en-IN')}`, icon: TrendingUp, color: 'text-teal-600', bg: 'bg-teal-50/80 border-teal-100/50' },
-              { label: 'Outstanding debts', val: `₹${stats.pendingAmount.toLocaleString('en-IN')}`, icon: ShieldAlert, color: 'text-rose-600', bg: 'bg-rose-50/80 border-rose-100/50' }
+              { label: 'Total students', val: stats.totalStudents, icon: Users, color: 'text-indigo-650', bg: 'bg-indigo-50/80 border-indigo-100/50', type: 'total' },
+              { label: 'Fully Paid', val: stats.paidStudents, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50/80 border-emerald-100/50', type: 'paid' },
+              { label: 'Pending Collections', val: stats.pendingStudents, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50/80 border-amber-100/50', type: 'pending' },
+              { label: 'Collected amount', val: `₹${stats.collectedAmount.toLocaleString('en-IN')}`, icon: TrendingUp, color: 'text-teal-650', bg: 'bg-teal-50/80 border-teal-100/50', type: 'collected' },
+              { label: 'Outstanding debts', val: `₹${stats.pendingAmount.toLocaleString('en-IN')}`, icon: ShieldAlert, color: 'text-rose-650', bg: 'bg-rose-50/80 border-rose-100/50', type: 'outstanding' }
             ].map((c, i) => {
               const Icon = c.icon;
               return (
-                <div key={i} className="bg-white p-4.5 rounded-2xl border border-slate-200/60 shadow-premium hover-lift">
+                <div 
+                  key={i} 
+                  onClick={() => handleMetricCardClick(c.type)}
+                  className="bg-white p-4.5 rounded-2xl border border-slate-200/60 shadow-premium hover-lift cursor-pointer hover:border-indigo-400/85 hover:shadow-lg transition-all"
+                >
                   <div className="flex items-center space-x-3.5">
                     <div className={`p-2.5 rounded-xl border shrink-0 ${c.bg} ${c.color}`}>
                       <Icon className="h-4.5 w-4.5" />
@@ -820,6 +824,8 @@ export default function TuitionDashboard({ activeTab, setActiveTab }) {
           )}
         </div>
       </div>
+        </>
+      )}
 
       {/* METRICS DETAILS MODAL */}
       {selectedMetric && (
@@ -929,7 +935,7 @@ export default function TuitionDashboard({ activeTab, setActiveTab }) {
                               <td className={`py-3.5 px-4 font-extrabold ${item.balanceAmount > 0 ? 'text-rose-600 bg-rose-50/30' : 'text-slate-800'}`}>₹{item.balanceAmount?.toLocaleString()}</td>
                               <td className="py-3.5 px-4">
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                  item.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-250' : 
+                                  item.status === 'Paid' ? 'bg-emerald-50 text-emerald-750 border border-emerald-250' : 
                                   item.status === 'Partial' ? 'bg-amber-50 text-amber-850 border border-amber-200' : 
                                   'bg-red-50 text-red-700 border border-red-200'
                                 }`}>
@@ -958,8 +964,6 @@ export default function TuitionDashboard({ activeTab, setActiveTab }) {
             </div>
           </div>
         </div>
-      )}
-        </>
       )}
     </div>
   );

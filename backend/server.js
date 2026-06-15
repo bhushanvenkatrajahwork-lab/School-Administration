@@ -58,3 +58,5 @@ async function bootstrap() {
 }
 
 bootstrap();
+// Trigger nodemon restart to reload environment configurations
+
