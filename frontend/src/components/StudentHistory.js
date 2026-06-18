@@ -18,7 +18,9 @@ import {
   Phone,
   Mail,
   MapPin,
-  FileDown
+  FileDown,
+  Bus,
+  Utensils
 } from 'lucide-react';
 
 export default function StudentHistory({ studentId, onBack }) {
@@ -64,7 +66,7 @@ export default function StudentHistory({ studentId, onBack }) {
     );
   }
 
-  const { student, tuition, books, uniform, payments, workflowHistory, activityHistory } = data;
+  const { student, tuition, books, uniform, transport, lunch, payments, workflowHistory, activityHistory } = data;
 
   // Print receipt function
   const handlePrintReceipt = (payment) => {
@@ -164,7 +166,19 @@ export default function StudentHistory({ studentId, onBack }) {
       return 'CLEARED';
     }
     if (stage === 'Uniform') {
-      return status === 'COMPLETED' ? 'CLEARED' : 'PENDING';
+      if (['TRANSPORT_PENDING', 'LUNCH_PENDING', 'COMPLETED'].includes(status)) return 'CLEARED';
+      if (uniform && uniform.status === 'Paid') return 'CLEARED';
+      return 'PENDING';
+    }
+    if (stage === 'Transport') {
+      if (['LUNCH_PENDING', 'COMPLETED'].includes(status)) return 'CLEARED';
+      if (transport && transport.status === 'Paid') return 'CLEARED';
+      return 'PENDING';
+    }
+    if (stage === 'Lunch') {
+      if (status === 'COMPLETED') return 'CLEARED';
+      if (lunch && lunch.status === 'Paid') return 'CLEARED';
+      return 'PENDING';
     }
     return 'PENDING';
   };
@@ -360,9 +374,7 @@ export default function StudentHistory({ studentId, onBack }) {
                     </p>
                   )}
                 </div>
-              </div>
-
-              {/* Stage 3: Uniform clearance */}
+                    {/* Stage 3: Uniform clearance */}
               <div className="relative">
                 <div className={`absolute -left-8 rounded-full h-7 w-7 border-4 border-white flex items-center justify-center text-white text-xs ${
                   getStageStatus('Uniform') === 'CLEARED' ? 'bg-emerald-500' : 'bg-slate-300'
@@ -407,6 +419,115 @@ export default function StudentHistory({ studentId, onBack }) {
                 </div>
               </div>
 
+              {/* Stage 4: Transportation clearance */}
+              <div className="relative">
+                <div className={`absolute -left-8 rounded-full h-7 w-7 border-4 border-white flex items-center justify-center text-white text-xs ${
+                  student.transportEnrollment === 'Yes' && student.transportType === 'School Bus'
+                    ? (getStageStatus('Transport') === 'CLEARED' ? 'bg-emerald-500' : 'bg-slate-300')
+                    : 'bg-slate-200 text-slate-500'
+                }`}>
+                  <Bus className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  {student.transportEnrollment === 'Yes' && student.transportType === 'School Bus' ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-900">Transportation Clearance</h4>
+                        {getStageStatus('Transport') === 'CLEARED' ? (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            Cleared
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      {transport && (transport.status === 'Paid' || transport.status === 'Partial') ? (
+                        <div className="mt-2 text-xs text-slate-500 space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                          <p>Route: {student.busRoute} (Bus: {student.busNumber || 'N/A'})</p>
+                          <p>Transport Fee: ₹{transport.feeAmount} | Paid: ₹{transport.amountPaid}</p>
+                          {transport.paymentDate && (
+                            <p className="text-[10px] text-slate-400">
+                              Payment recorded on {new Date(transport.paymentDate).toLocaleDateString()} via {transport.paymentMethod}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          {student.clearanceStatus === 'TRANSPORT_PENDING' ? 'Waiting for transportation fee payment' : 'Locked until Uniform is cleared'}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-900">Transportation Clearance</h4>
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                          {student.transportEnrollment === 'Yes' ? student.transportType : 'Not Enrolled'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-450 mt-1">Auto-cleared (No bus fee required)</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Stage 5: Lunch Facility clearance */}
+              <div className="relative">
+                <div className={`absolute -left-8 rounded-full h-7 w-7 border-4 border-white flex items-center justify-center text-white text-xs ${
+                  student.lunchEnrollment === 'Lunch at School'
+                    ? (getStageStatus('Lunch') === 'CLEARED' ? 'bg-emerald-500' : 'bg-slate-300')
+                    : 'bg-slate-200 text-slate-500'
+                }`}>
+                  <Utensils className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  {student.lunchEnrollment === 'Lunch at School' ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-900">Lunch Facility Clearance</h4>
+                        {getStageStatus('Lunch') === 'CLEARED' ? (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            Cleared
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      {lunch && (lunch.status === 'Paid' || lunch.status === 'Partial') ? (
+                        <div className="mt-2 text-xs text-slate-500 space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                          <p>Period: {student.lunchPeriod}</p>
+                          <p>Lunch Fee: ₹{lunch.feeAmount} | Paid: ₹{lunch.amountPaid}</p>
+                          {lunch.paymentDate && (
+                            <p className="text-[10px] text-slate-400">
+                              Payment recorded on {new Date(lunch.paymentDate).toLocaleDateString()} via {lunch.paymentMethod}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          {student.clearanceStatus === 'LUNCH_PENDING' ? 'Waiting for lunch fee payment' : 'Locked until Transport is cleared'}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-900">Lunch Facility Clearance</h4>
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                          Not Enrolled
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-450 mt-1">Auto-cleared (Not taking school meals)</p>
+                    </>
+                  )}
+                </div>
+              </div>>
+              </div>
+
             </div>
           </div>
 
@@ -441,7 +562,11 @@ export default function StudentHistory({ studentId, onBack }) {
                               ? 'bg-indigo-50 text-indigo-700' 
                               : p.feeType === 'Book' 
                                 ? 'bg-amber-50 text-amber-700' 
-                                : 'bg-rose-50 text-rose-700'
+                                : p.feeType === 'Uniform'
+                                  ? 'bg-rose-50 text-rose-700'
+                                  : p.feeType === 'Transportation'
+                                    ? 'bg-cyan-50 text-cyan-700'
+                                    : 'bg-emerald-50 text-emerald-700'
                           }`}>
                             {p.feeType}
                           </span>

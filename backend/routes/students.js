@@ -525,7 +525,9 @@ router.get('/:id/history', authenticate, async (req, res) => {
       student = await models.Student.findById(req.params.id)
         .populate('tuitionFee.updatedBy')
         .populate('bookFee.updatedBy')
-        .populate('uniformFee.updatedBy');
+        .populate('uniformFee.updatedBy')
+        .populate('transportFee.updatedBy')
+        .populate('lunchFee.updatedBy');
     }
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
@@ -539,12 +541,16 @@ router.get('/:id/history', authenticate, async (req, res) => {
     const tuitionData = student.tuitionFee ? { ...(student.tuitionFee.toObject ? student.tuitionFee.toObject() : student.tuitionFee), student: studentObjectId } : null;
     const bookData = student.bookFee ? { ...(student.bookFee.toObject ? student.bookFee.toObject() : student.bookFee), student: studentObjectId } : null;
     const uniformData = student.uniformFee ? { ...(student.uniformFee.toObject ? student.uniformFee.toObject() : student.uniformFee), student: studentObjectId } : null;
+    const transportData = student.transportFee ? { ...(student.transportFee.toObject ? student.transportFee.toObject() : student.transportFee), student: studentObjectId } : null;
+    const lunchData = student.lunchFee ? { ...(student.lunchFee.toObject ? student.lunchFee.toObject() : student.lunchFee), student: studentObjectId } : null;
 
     res.json({
       student,
       tuition: tuitionData,
       books: bookData,
       uniform: uniformData,
+      transport: transportData,
+      lunch: lunchData,
       payments: payments || [],
       workflowHistory: requests || [],
       activityHistory: audits || []

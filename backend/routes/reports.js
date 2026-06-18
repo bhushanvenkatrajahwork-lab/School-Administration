@@ -54,6 +54,40 @@ router.get('/uniforms', authenticate, async (req, res) => {
   }
 });
 
+// @route   GET /api/reports/transportation
+// @desc    Get Transportation Fee reports
+// @access  Private
+router.get('/transportation', authenticate, async (req, res) => {
+  try {
+    const students = await models.Student.find({ transportEnrollment: 'Yes', transportType: 'School Bus' });
+    const list = students.map(s => {
+      const sObj = s.toObject();
+      const transport = sObj.transportFee || {};
+      return { ...transport, student: sObj };
+    });
+    res.json(list);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/reports/lunch
+// @desc    Get Lunch Fee reports
+// @access  Private
+router.get('/lunch', authenticate, async (req, res) => {
+  try {
+    const students = await models.Student.find({ lunchEnrollment: 'Lunch at School' });
+    const list = students.map(s => {
+      const sObj = s.toObject();
+      const lunch = sObj.lunchFee || {};
+      return { ...lunch, student: sObj };
+    });
+    res.json(list);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/reports/pending
 // @desc    Get reports of pending fees (students with balance > 0)
 // @access  Private
@@ -62,6 +96,8 @@ router.get('/pending', authenticate, async (req, res) => {
     const tuitionPending = await models.Student.find({ 'tuitionFee.balanceAmount': { $gt: 0 } });
     const bookPending = await models.Student.find({ 'bookFee.balanceAmount': { $gt: 0 } });
     const uniformPending = await models.Student.find({ 'uniformFee.balanceAmount': { $gt: 0 } });
+    const transportPending = await models.Student.find({ 'transportFee.balanceAmount': { $gt: 0 } });
+    const lunchPending = await models.Student.find({ 'lunchFee.balanceAmount': { $gt: 0 } });
 
     // Combine them into a simplified view
     const pendingList = [];
@@ -120,6 +156,42 @@ router.get('/pending', authenticate, async (req, res) => {
       }
     });
 
+    // Add transport entries
+    transportPending.forEach(student => {
+      const t = student.transportFee;
+      if (t) {
+        pendingList.push({
+          studentId: student.studentId,
+          name: student.name,
+          classSection: `${student.class}-${student.section}`,
+          admissionNumber: student.admissionNumber,
+          feeType: 'Transportation',
+          totalAmount: t.feeAmount,
+          paidAmount: t.amountPaid,
+          balanceAmount: t.balanceAmount,
+          status: t.status
+        });
+      }
+    });
+
+    // Add lunch entries
+    lunchPending.forEach(student => {
+      const l = student.lunchFee;
+      if (l) {
+        pendingList.push({
+          studentId: student.studentId,
+          name: student.name,
+          classSection: `${student.class}-${student.section}`,
+          admissionNumber: student.admissionNumber,
+          feeType: 'Lunch',
+          totalAmount: l.feeAmount,
+          paidAmount: l.amountPaid,
+          balanceAmount: l.balanceAmount,
+          status: l.status
+        });
+      }
+    });
+
     res.json(pendingList);
   } catch (error) {
     console.error(error);
@@ -145,7 +217,9 @@ router.get('/collections', authenticate, async (req, res) => {
     const breakdown = {
       Tuition: 0,
       Book: 0,
-      Uniform: 0
+      Uniform: 0,
+      Transportation: 0,
+      Lunch: 0
     };
 
     payments.forEach(p => {
@@ -194,7 +268,7 @@ router.get('/clearance', authenticate, async (req, res) => {
 // @desc    Export specific reports in CSV format
 // @access  Private
 router.get('/export/csv', authenticate, async (req, res) => {
-  const { type } = req.query; // 'tuition', 'books', 'uniforms', 'pending', 'clearance'
+  const { type } = req.query; // 'tuition', 'books', 'uniforms', 'pending', 'clearance', 'transportation', 'lunch'
   
   try {
     let csvContent = '';
@@ -235,11 +309,35 @@ router.get('/export/csv', authenticate, async (req, res) => {
           csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}","${s.section}",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}","${itemsStr}"\n`;
         }
       });
+    } else if (type === 'transportation') {
+      const students = await models.Student.find({ transportEnrollment: 'Yes', transportType: 'School Bus' });
+      filename = 'transport_fee_report.csv';
+      csvContent = 'Student ID,Admission No,Student Name,Class,Section,Enrollment,Transport Type,Route,Bus Number,Fee Amount,Paid,Balance,Status,Payment Date\n';
+      
+      students.forEach(s => {
+        const r = s.transportFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}","${s.section}","${s.transportEnrollment || 'Yes'}","${s.transportType || 'School Bus'}","${s.busRoute || ''}","${s.busNumber || ''}",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}","${r.paymentDate ? new Date(r.paymentDate).toLocaleDateString() : 'N/A'}"\n`;
+        }
+      });
+    } else if (type === 'lunch') {
+      const students = await models.Student.find({ lunchEnrollment: 'Lunch at School' });
+      filename = 'lunch_fee_report.csv';
+      csvContent = 'Student ID,Admission No,Student Name,Class,Section,Enrollment,Period,Fee Amount,Paid,Balance,Status,Payment Date\n';
+      
+      students.forEach(s => {
+        const r = s.lunchFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}","${s.section}","${s.lunchEnrollment || 'Lunch at School'}","${s.lunchPeriod || ''}",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}","${r.paymentDate ? new Date(r.paymentDate).toLocaleDateString() : 'N/A'}"\n`;
+        }
+      });
     } else if (type === 'pending') {
-      // Fetch tuition, books, uniforms pending
+      // Fetch tuition, books, uniforms, transport, lunch pending
       const tuitionPending = await models.Student.find({ 'tuitionFee.balanceAmount': { $gt: 0 } });
       const bookPending = await models.Student.find({ 'bookFee.balanceAmount': { $gt: 0 } });
       const uniformPending = await models.Student.find({ 'uniformFee.balanceAmount': { $gt: 0 } });
+      const transportPending = await models.Student.find({ 'transportFee.balanceAmount': { $gt: 0 } });
+      const lunchPending = await models.Student.find({ 'lunchFee.balanceAmount': { $gt: 0 } });
       
       filename = 'pending_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class-Section,Fee Type,Total Fee,Amount Paid,Balance Outstanding,Status\n';
@@ -262,6 +360,20 @@ router.get('/export/csv', authenticate, async (req, res) => {
         const r = s.uniformFee;
         if (r) {
           csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}-${s.section}","Uniform",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}"\n`;
+        }
+      });
+
+      transportPending.forEach(s => {
+        const r = s.transportFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}-${s.section}","Transportation",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}"\n`;
+        }
+      });
+
+      lunchPending.forEach(s => {
+        const r = s.lunchFee;
+        if (r) {
+          csvContent += `"${s.studentId}","${s.admissionNumber}","${s.name}","${s.class}-${s.section}","Lunch",${r.feeAmount || 0},${r.amountPaid || 0},${r.balanceAmount || 0},"${r.status || 'Pending'}"\n`;
         }
       });
     } else if (type === 'clearance') {

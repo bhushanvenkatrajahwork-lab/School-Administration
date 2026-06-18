@@ -11,7 +11,7 @@ router.get('/stats', authenticate, async (req, res) => {
     const totalStudents = await models.Student.countDocuments();
     
     // Aggregations from nested Student fields
-    const students = await models.Student.find({}, 'tuitionFee bookFee uniformFee');
+    const students = await models.Student.find({}, 'tuitionFee bookFee uniformFee transportFee lunchFee');
 
     let tuitionCollected = 0;
     let tuitionPending = 0;
@@ -19,6 +19,10 @@ router.get('/stats', authenticate, async (req, res) => {
     let bookPending = 0;
     let uniformCollected = 0;
     let uniformPending = 0;
+    let transportCollected = 0;
+    let transportPending = 0;
+    let lunchCollected = 0;
+    let lunchPending = 0;
 
     students.forEach(s => {
       if (s.tuitionFee) {
@@ -33,10 +37,18 @@ router.get('/stats', authenticate, async (req, res) => {
         uniformCollected += s.uniformFee.amountPaid || 0;
         uniformPending += s.uniformFee.balanceAmount || 0;
       }
+      if (s.transportFee) {
+        transportCollected += s.transportFee.amountPaid || 0;
+        transportPending += s.transportFee.balanceAmount || 0;
+      }
+      if (s.lunchFee) {
+        lunchCollected += s.lunchFee.amountPaid || 0;
+        lunchPending += s.lunchFee.balanceAmount || 0;
+      }
     });
 
-    const totalCollected = tuitionCollected + bookCollected + uniformCollected;
-    const totalPending = tuitionPending + bookPending + uniformPending;
+    const totalCollected = tuitionCollected + bookCollected + uniformCollected + transportCollected + lunchCollected;
+    const totalPending = tuitionPending + bookPending + uniformPending + transportPending + lunchPending;
 
     // Fetch recent 5 transactions
     const recentTransactions = await models.Payment.find()
@@ -60,6 +72,8 @@ router.get('/stats', authenticate, async (req, res) => {
       tuitionPending: await models.Student.countDocuments({ clearanceStatus: 'TUITION_PENDING' }),
       booksPending: await models.Student.countDocuments({ clearanceStatus: 'BOOKS_PENDING' }),
       uniformPending: await models.Student.countDocuments({ clearanceStatus: 'UNIFORM_PENDING' }),
+      transportPending: await models.Student.countDocuments({ clearanceStatus: 'TRANSPORT_PENDING' }),
+      lunchPending: await models.Student.countDocuments({ clearanceStatus: 'LUNCH_PENDING' }),
       completed: await models.Student.countDocuments({ clearanceStatus: 'COMPLETED' })
     };
 
@@ -73,7 +87,11 @@ router.get('/stats', authenticate, async (req, res) => {
         bookCollected,
         bookPending,
         uniformCollected,
-        uniformPending
+        uniformPending,
+        transportCollected,
+        transportPending,
+        lunchCollected,
+        lunchPending
       },
       schoolTypeStats,
       workflowProgress,

@@ -22,7 +22,9 @@ import {
   BookOpen,
   Shirt,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Bus,
+  Utensils
 } from 'lucide-react';
 
 export default function AppShell({ children, activeTab, setActiveTab, onOpenStudentHistory }) {
@@ -110,6 +112,8 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'students', label: 'Student Directory', icon: Users },
         { id: 'configs', label: 'School & Catalog', icon: School },
+        { id: 'transport-overview', label: 'Transportation', icon: Bus },
+        { id: 'lunch-overview', label: 'Lunch Facility', icon: Utensils },
         { id: 'history', label: 'Student Histories', icon: History },
         { id: 'reports', label: 'Analytics Reports', icon: FileSpreadsheet },
         { id: 'users', label: 'Staff Directory', icon: UserCheck },
@@ -131,6 +135,8 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
       return [
         { id: 'uniform-overview', label: 'Uniform Dashboard', icon: LayoutDashboard },
         { id: 'uniform-queue', label: 'Clearance Queue', icon: Shirt },
+        { id: 'transport-overview', label: 'Transportation', icon: Bus },
+        { id: 'lunch-overview', label: 'Lunch Facility', icon: Utensils },
         { id: 'history', label: 'Clearance History', icon: History },
       ];
     }

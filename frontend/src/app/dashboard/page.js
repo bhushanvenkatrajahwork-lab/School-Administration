@@ -8,6 +8,8 @@ import AdminDashboard from '../../components/AdminDashboard';
 import TuitionDashboard from '../../components/TuitionDashboard';
 import BookDashboard from '../../components/BookDashboard';
 import UniformDashboard from '../../components/UniformDashboard';
+import TransportationDashboard from '../../components/TransportationDashboard';
+import LunchDashboard from '../../components/LunchDashboard';
 import StudentHistory from '../../components/StudentHistory';
 import StudentHistoryRegistry from '../../components/StudentHistoryRegistry';
 import { Loader2 } from 'lucide-react';
@@ -71,6 +73,12 @@ export default function DashboardPage() {
 
     const role = user.role;
     if (role === 'SUPER_ADMIN') {
+      if (activeTab === 'transport-overview') {
+        return <TransportationDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
+      }
+      if (activeTab === 'lunch-overview') {
+        return <LunchDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
+      }
       return (
         <AdminDashboard 
           activeTab={activeTab} 
@@ -82,6 +90,12 @@ export default function DashboardPage() {
     } else if (role === 'BOOK_DEPT') {
       return <BookDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
     } else if (role === 'UNIFORM_DEPT') {
+      if (activeTab === 'transport-overview') {
+        return <TransportationDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
+      }
+      if (activeTab === 'lunch-overview') {
+        return <LunchDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
+      }
       return <UniformDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
     }
 
