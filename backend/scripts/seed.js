@@ -20,6 +20,8 @@ const seed = async () => {
     await models.ClassConfig.deleteMany({});
     await models.BookConfig.deleteMany({});
     await models.UniformConfig.deleteMany({});
+    await models.TransportConfig.deleteMany({});
+    await models.LunchConfig.deleteMany({});
     await models.TuitionFee.deleteMany({});
     await models.BookFee.deleteMany({});
     await models.UniformFee.deleteMany({});
@@ -148,6 +150,44 @@ const seed = async () => {
       feeAmount: 3500
     });
     console.log('Book and Uniform configurations seeded.');
+
+    // ----------------------------------------------------
+    // 6. SEED TRANSPORT CONFIGURATIONS
+    // ----------------------------------------------------
+    console.log('Seeding transportation configurations...');
+    await models.TransportConfig.create({
+      route: 'Route A',
+      feeAmount: 3000,
+      busNumber: 'BUS-A101'
+    });
+    await models.TransportConfig.create({
+      route: 'Route B',
+      feeAmount: 3500,
+      busNumber: 'BUS-B202'
+    });
+    await models.TransportConfig.create({
+      route: 'Route C',
+      feeAmount: 4000,
+      busNumber: 'BUS-C303'
+    });
+
+    // ----------------------------------------------------
+    // 7. SEED LUNCH CONFIGURATIONS
+    // ----------------------------------------------------
+    console.log('Seeding lunch configurations...');
+    await models.LunchConfig.create({
+      period: 'Monthly',
+      feeAmount: 2500
+    });
+    await models.LunchConfig.create({
+      period: 'Quarterly',
+      feeAmount: 7000
+    });
+    await models.LunchConfig.create({
+      period: 'Annual',
+      feeAmount: 25000
+    });
+    console.log('Transportation and Lunch configurations seeded.');
 
     console.log('==================================================');
     console.log('DATABASE SEEDING SUCCESSFUL (CORE CONFIGS & STAFF USERS ONLY)');

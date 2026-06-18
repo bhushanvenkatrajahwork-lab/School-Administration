@@ -56,6 +56,26 @@ const nestedUniformFeeSchema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { _id: false });
 
+const nestedTransportFeeSchema = new mongoose.Schema({
+  feeAmount: { type: Number, required: true, default: 0 },
+  amountPaid: { type: Number, default: 0 },
+  balanceAmount: { type: Number, required: true },
+  status: { type: String, default: 'Pending', enum: ['Paid', 'Partially Paid', 'Pending', 'Overdue', 'Not Applicable'] },
+  paymentDate: { type: Date },
+  paymentMethod: { type: String },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { _id: false });
+
+const nestedLunchFeeSchema = new mongoose.Schema({
+  feeAmount: { type: Number, required: true, default: 0 },
+  amountPaid: { type: Number, default: 0 },
+  balanceAmount: { type: Number, required: true },
+  status: { type: String, default: 'Pending', enum: ['Paid', 'Partially Paid', 'Pending', 'Overdue', 'Not Applicable'] },
+  paymentDate: { type: Date },
+  paymentMethod: { type: String },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { _id: false });
+
 // ==========================================
 // 2. STUDENT SCHEMA
 // ==========================================
@@ -85,12 +105,38 @@ const studentSchema = new mongoose.Schema({
       'BOOKS_CLEARED', 
       'UNIFORM_PENDING', 
       'UNIFORM_CLEARED', 
+      'TRANSPORT_PENDING',
+      'LUNCH_PENDING',
       'COMPLETED'
     ] 
   },
   tuitionFee: { type: nestedTuitionFeeSchema, default: () => ({}) },
   bookFee: { type: nestedBookFeeSchema, default: () => ({}) },
-  uniformFee: { type: nestedUniformFeeSchema, default: () => ({}) }
+  uniformFee: { type: nestedUniformFeeSchema, default: () => ({}) },
+  
+  // Transportation details
+  transportEnrollment: { type: String, default: 'No', enum: ['Yes', 'No'] },
+  transportType: { type: String, enum: ['School Bus', 'Parent Transport', 'Outsourced Transport'] },
+  busRoute: { type: String },
+  busNumber: { type: String },
+  pickupLocation: { type: String },
+  dropLocation: { type: String },
+  boardingPoint: { type: String },
+  transportStartDate: { type: Date },
+  transportEndDate: { type: Date },
+  transportRemarks: { type: String },
+  outsourcedName: { type: String },
+  outsourcedContactPerson: { type: String },
+  outsourcedContactNumber: { type: String },
+  outsourcedRoute: { type: String },
+  outsourcedPickup: { type: String },
+  outsourcedDrop: { type: String },
+  transportFee: { type: nestedTransportFeeSchema, default: () => ({}) },
+
+  // Lunch details
+  lunchEnrollment: { type: String, default: 'Not Taking School Lunch', enum: ['Lunch at School', 'Not Taking School Lunch'] },
+  lunchPeriod: { type: String, enum: ['Monthly', 'Quarterly', 'Annual'] },
+  lunchFee: { type: nestedLunchFeeSchema, default: () => ({}) }
 }, { timestamps: true, collection: 'student.records' });
 
 // ==========================================
@@ -120,6 +166,17 @@ const uniformConfigSchema = new mongoose.Schema({
   items: [{ type: String }],
   feeAmount: { type: Number, required: true, default: 0 }
 }, { timestamps: true, collection: 'config.uniforms' });
+
+const transportConfigSchema = new mongoose.Schema({
+  route: { type: String, required: true, unique: true },
+  feeAmount: { type: Number, required: true, default: 0 },
+  busNumber: { type: String }
+}, { timestamps: true, collection: 'config.transport' });
+
+const lunchConfigSchema = new mongoose.Schema({
+  period: { type: String, required: true, unique: true },
+  feeAmount: { type: Number, required: true, default: 0 }
+}, { timestamps: true, collection: 'config.lunch' });
 
 // ==========================================
 // 6. TUITION FEE SCHEMA
@@ -207,7 +264,7 @@ const notificationSchema = new mongoose.Schema({
 const paymentSchema = new mongoose.Schema({
   receiptNumber: { type: String, required: true, unique: true },
   student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
-  feeType: { type: String, required: true, enum: ['Tuition', 'Book', 'Uniform'] },
+  feeType: { type: String, required: true, enum: ['Tuition', 'Book', 'Uniform', 'Transportation', 'Lunch'] },
   amount: { type: Number, required: true },
   paymentDate: { type: Date, default: Date.now },
   paymentMethod: { type: String, required: true },
@@ -226,6 +283,8 @@ try {
     ClassConfig: mongoose.model('ClassConfig', classConfigSchema),
     BookConfig: mongoose.model('BookConfig', bookConfigSchema),
     UniformConfig: mongoose.model('UniformConfig', uniformConfigSchema),
+    TransportConfig: mongoose.model('TransportConfig', transportConfigSchema),
+    LunchConfig: mongoose.model('LunchConfig', lunchConfigSchema),
     TuitionFee: mongoose.model('TuitionFee', tuitionFeeSchema),
     BookFee: mongoose.model('BookFee', bookFeeSchema),
     UniformFee: mongoose.model('UniformFee', uniformFeeSchema),
@@ -245,6 +304,8 @@ const JSONModels = {
   ClassConfig: new JSONModel('config.classes'),
   BookConfig: new JSONModel('config.books'),
   UniformConfig: new JSONModel('config.uniforms'),
+  TransportConfig: new JSONModel('config.transport'),
+  LunchConfig: new JSONModel('config.lunch'),
   TuitionFee: new JSONModel('fee.tuition'),
   BookFee: new JSONModel('fee.book'),
   UniformFee: new JSONModel('fee.uniform'),
