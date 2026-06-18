@@ -205,4 +205,177 @@ router.post('/uniforms', authenticate, authorize(['SUPER_ADMIN']), async (req, r
   }
 });
 
+// ==========================================
+// TRANSPORTATION CONFIGURATION ROUTES
+// ==========================================
+
+// @route   GET /api/classes/transportation
+// @desc    Get all transportation route configurations
+// @access  Private
+router.get('/transportation', authenticate, async (req, res) => {
+  try {
+    const config = await models.TransportConfig.find();
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching transportation configurations' });
+  }
+});
+
+// @route   POST /api/classes/transportation
+// @desc    Configure transportation route and fee amount
+// @access  Private (Super Admin Only)
+router.post('/transportation', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
+  const { route, feeAmount, busNumber } = req.body;
+
+  if (!route || feeAmount === undefined) {
+    return res.status(400).json({ message: 'Please enter route name and fee amount' });
+  }
+
+  try {
+    let existingConfig = await models.TransportConfig.findOne({ route });
+    let result;
+    let oldVal = null;
+    let action = 'TRANSPORT_CONFIG_SAVED';
+
+    if (existingConfig) {
+      oldVal = JSON.parse(JSON.stringify(existingConfig));
+      result = await models.TransportConfig.findByIdAndUpdate(
+        existingConfig._id,
+        { feeAmount: Number(feeAmount), busNumber: busNumber || '' },
+        { new: true }
+      );
+    } else {
+      result = await models.TransportConfig.create({
+        route,
+        feeAmount: Number(feeAmount),
+        busNumber: busNumber || ''
+      });
+    }
+
+    await logAudit(
+      req.user.username,
+      action,
+      null,
+      `Saved transportation route and fee config: ${route} - ₹${feeAmount}`,
+      oldVal,
+      result
+    );
+
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error saving transport config' });
+  }
+});
+
+// @route   DELETE /api/classes/transportation/:id
+// @desc    Delete transportation config
+// @access  Private (Super Admin Only)
+router.delete('/transportation/:id', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
+  try {
+    const config = await models.TransportConfig.findById(req.params.id);
+    if (!config) return res.status(404).json({ message: 'Transportation route config not found' });
+
+    await models.TransportConfig.deleteOne({ _id: req.params.id });
+
+    await logAudit(
+      req.user.username,
+      'TRANSPORT_CONFIG_DELETED',
+      null,
+      `Deleted transportation config: ${config.route}`,
+      config,
+      null
+    );
+
+    res.json({ message: 'Transportation config deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error deleting transport config' });
+  }
+});
+
+// ==========================================
+// LUNCH CONFIGURATION ROUTES
+// ==========================================
+
+// @route   GET /api/classes/lunch
+// @desc    Get all lunch configurations
+// @access  Private
+router.get('/lunch', authenticate, async (req, res) => {
+  try {
+    const config = await models.LunchConfig.find();
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching lunch configurations' });
+  }
+});
+
+// @route   POST /api/classes/lunch
+// @desc    Configure lunch period and fee amount
+// @access  Private (Super Admin Only)
+router.post('/lunch', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
+  const { period, feeAmount } = req.body;
+
+  if (!period || feeAmount === undefined) {
+    return res.status(400).json({ message: 'Please enter period and fee amount' });
+  }
+
+  try {
+    let existingConfig = await models.LunchConfig.findOne({ period });
+    let result;
+    let oldVal = null;
+    let action = 'LUNCH_CONFIG_SAVED';
+
+    if (existingConfig) {
+      oldVal = JSON.parse(JSON.stringify(existingConfig));
+      result = await models.LunchConfig.findByIdAndUpdate(
+        existingConfig._id,
+        { feeAmount: Number(feeAmount) },
+        { new: true }
+      );
+    } else {
+      result = await models.LunchConfig.create({
+        period,
+        feeAmount: Number(feeAmount)
+      });
+    }
+
+    await logAudit(
+      req.user.username,
+      action,
+      null,
+      `Saved lunch period and fee config: ${period} - ₹${feeAmount}`,
+      oldVal,
+      result
+    );
+
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error saving lunch config' });
+  }
+});
+
+// @route   DELETE /api/classes/lunch/:id
+// @desc    Delete lunch config
+// @access  Private (Super Admin Only)
+router.delete('/lunch/:id', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
+  try {
+    const config = await models.LunchConfig.findById(req.params.id);
+    if (!config) return res.status(404).json({ message: 'Lunch config not found' });
+
+    await models.LunchConfig.deleteOne({ _id: req.params.id });
+
+    await logAudit(
+      req.user.username,
+      'LUNCH_CONFIG_DELETED',
+      null,
+      `Deleted lunch config: ${config.period}`,
+      config,
+      null
+    );
+
+    res.json({ message: 'Lunch config deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error deleting lunch config' });
+  }
+});
+
 module.exports = router;

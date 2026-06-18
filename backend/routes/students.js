@@ -95,7 +95,27 @@ router.post('/', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
     email,
     address,
     academicYear,
-    tuitionFeeAmount // Optional initial tuition fee amount
+    tuitionFeeAmount, // Optional initial tuition fee amount
+
+    // New fields
+    transportEnrollment,
+    transportType,
+    busRoute,
+    busNumber,
+    pickupLocation,
+    dropLocation,
+    boardingPoint,
+    transportStartDate,
+    transportEndDate,
+    transportRemarks,
+    outsourcedName,
+    outsourcedContactPerson,
+    outsourcedContactNumber,
+    outsourcedRoute,
+    outsourcedPickup,
+    outsourcedDrop,
+    lunchEnrollment,
+    lunchPeriod
   } = req.body;
 
   if (!admissionNumber || !name || !gender || !dob || !schoolType || !className || !section || !rollNumber || !fatherName || !motherName || !parentMobile || !address || !academicYear) {
@@ -114,6 +134,26 @@ router.post('/', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
     // Default tuition fee values (typically 12,000 for CBSE, 15,000 for ICSE, or configurable)
     const baseTuition = schoolType === 'CBSE' ? 12000 : 15000;
     const feeAmount = Number(tuitionFeeAmount) || baseTuition;
+
+    // Fetch Transport Config if School Bus is selected
+    let transportFeeAmount = 0;
+    let finalBusNumber = '';
+    if (transportEnrollment === 'Yes' && transportType === 'School Bus' && busRoute) {
+      const transConfig = await models.TransportConfig.findOne({ route: busRoute });
+      if (transConfig) {
+        transportFeeAmount = transConfig.feeAmount || 0;
+        finalBusNumber = transConfig.busNumber || busNumber || '';
+      }
+    }
+
+    // Fetch Lunch Config if Lunch at School is selected
+    let lunchFeeAmount = 0;
+    if (lunchEnrollment === 'Lunch at School' && lunchPeriod) {
+      const lnConfig = await models.LunchConfig.findOne({ period: lunchPeriod });
+      if (lnConfig) {
+        lunchFeeAmount = lnConfig.feeAmount || 0;
+      }
+    }
 
     // Create Student with nested fee schemas
     const student = await models.Student.create({
@@ -159,6 +199,46 @@ router.post('/', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
         balanceAmount: 0,
         status: 'Pending',
         issuedItems: []
+      },
+
+      // Transportation details
+      transportEnrollment: transportEnrollment || 'No',
+      transportType: transportType || null,
+      busRoute: busRoute || '',
+      busNumber: finalBusNumber,
+      pickupLocation: pickupLocation || '',
+      dropLocation: dropLocation || '',
+      boardingPoint: boardingPoint || '',
+      transportStartDate: transportStartDate ? new Date(transportStartDate) : null,
+      transportEndDate: transportEndDate ? new Date(transportEndDate) : null,
+      transportRemarks: transportRemarks || '',
+      outsourcedName: outsourcedName || '',
+      outsourcedContactPerson: outsourcedContactPerson || '',
+      outsourcedContactNumber: outsourcedContactNumber || '',
+      outsourcedRoute: outsourcedRoute || '',
+      outsourcedPickup: outsourcedPickup || '',
+      outsourcedDrop: outsourcedDrop || '',
+      transportFee: {
+        feeAmount: transportFeeAmount,
+        amountPaid: 0,
+        balanceAmount: transportFeeAmount,
+        status: (transportEnrollment === 'Yes' && transportType === 'School Bus') ? 'Pending' : 'Not Applicable',
+        paymentDate: null,
+        paymentMethod: null,
+        updatedBy: req.user.id
+      },
+
+      // Lunch details
+      lunchEnrollment: lunchEnrollment || 'Not Taking School Lunch',
+      lunchPeriod: lunchPeriod || null,
+      lunchFee: {
+        feeAmount: lunchFeeAmount,
+        amountPaid: 0,
+        balanceAmount: lunchFeeAmount,
+        status: (lunchEnrollment === 'Lunch at School') ? 'Pending' : 'Not Applicable',
+        paymentDate: null,
+        paymentMethod: null,
+        updatedBy: req.user.id
       }
     });
 
@@ -199,6 +279,10 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
     let failCount = 0;
     const errors = [];
 
+    // Cache configs for bulk lookup
+    const allTransportConfigs = await models.TransportConfig.find();
+    const allLunchConfigs = await models.LunchConfig.find();
+
     // Process each student sequentially to ensure IDs are generated correctly
     for (let i = 0; i < students.length; i++) {
       const s = students[i];
@@ -213,6 +297,26 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
         if (req.body.overwriteConflicts) {
           const baseTuition = s.schoolType === 'CBSE' ? 12000 : 15000;
           const feeAmount = Number(s.tuitionFeeAmount) || baseTuition;
+
+          // Fetch Transport Config if School Bus is selected
+          let transportFeeAmount = 0;
+          let finalBusNumber = '';
+          if (s.transportEnrollment === 'Yes' && s.transportType === 'School Bus' && s.busRoute) {
+            const transConfig = allTransportConfigs.find(c => c.route.toLowerCase() === s.busRoute.toLowerCase());
+            if (transConfig) {
+              transportFeeAmount = transConfig.feeAmount || 0;
+              finalBusNumber = transConfig.busNumber || s.busNumber || '';
+            }
+          }
+
+          // Fetch Lunch Config if Lunch at School is selected
+          let lunchFeeAmount = 0;
+          if (s.lunchEnrollment === 'Lunch at School' && s.lunchPeriod) {
+            const lnConfig = allLunchConfigs.find(c => c.period.toLowerCase() === s.lunchPeriod.toLowerCase());
+            if (lnConfig) {
+              lunchFeeAmount = lnConfig.feeAmount || 0;
+            }
+          }
           
           await models.Student.updateOne({ admissionNumber: s.admissionNumber }, {
             name: s.name,
@@ -232,6 +336,38 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
               'tuitionFee.feeAmount': feeAmount,
               'tuitionFee.totalAmount': feeAmount,
               'tuitionFee.balanceAmount': feeAmount
+            } : {}),
+            
+            // Transportation fields update
+            transportEnrollment: s.transportEnrollment || 'No',
+            transportType: s.transportType || null,
+            busRoute: s.busRoute || '',
+            busNumber: finalBusNumber,
+            pickupLocation: s.pickupLocation || '',
+            dropLocation: s.dropLocation || '',
+            boardingPoint: s.boardingPoint || '',
+            transportStartDate: s.transportStartDate ? new Date(s.transportStartDate) : null,
+            transportEndDate: s.transportEndDate ? new Date(s.transportEndDate) : null,
+            transportRemarks: s.transportRemarks || '',
+            outsourcedName: s.outsourcedName || '',
+            outsourcedContactPerson: s.outsourcedContactPerson || '',
+            outsourcedContactNumber: s.outsourcedContactNumber || '',
+            outsourcedRoute: s.outsourcedRoute || '',
+            outsourcedPickup: s.outsourcedPickup || '',
+            outsourcedDrop: s.outsourcedDrop || '',
+            ...(existing.transportFee.amountPaid === 0 ? {
+              'transportFee.feeAmount': transportFeeAmount,
+              'transportFee.balanceAmount': transportFeeAmount,
+              'transportFee.status': (s.transportEnrollment === 'Yes' && s.transportType === 'School Bus') ? 'Pending' : 'Not Applicable'
+            } : {}),
+
+            // Lunch fields update
+            lunchEnrollment: s.lunchEnrollment || 'Not Taking School Lunch',
+            lunchPeriod: s.lunchPeriod || null,
+            ...(existing.lunchFee.amountPaid === 0 ? {
+              'lunchFee.feeAmount': lunchFeeAmount,
+              'lunchFee.balanceAmount': lunchFeeAmount,
+              'lunchFee.status': (s.lunchEnrollment === 'Lunch at School') ? 'Pending' : 'Not Applicable'
             } : {})
           });
           successCount++;
@@ -246,6 +382,26 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
       const studentId = await generateStudentId();
       const baseTuition = s.schoolType === 'CBSE' ? 12000 : 15000;
       const feeAmount = Number(s.tuitionFeeAmount) || baseTuition;
+
+      // Fetch Transport Config if School Bus is selected
+      let transportFeeAmount = 0;
+      let finalBusNumber = '';
+      if (s.transportEnrollment === 'Yes' && s.transportType === 'School Bus' && s.busRoute) {
+        const transConfig = allTransportConfigs.find(c => c.route.toLowerCase() === s.busRoute.toLowerCase());
+        if (transConfig) {
+          transportFeeAmount = transConfig.feeAmount || 0;
+          finalBusNumber = transConfig.busNumber || s.busNumber || '';
+        }
+      }
+
+      // Fetch Lunch Config if Lunch at School is selected
+      let lunchFeeAmount = 0;
+      if (s.lunchEnrollment === 'Lunch at School' && s.lunchPeriod) {
+        const lnConfig = allLunchConfigs.find(c => c.period.toLowerCase() === s.lunchPeriod.toLowerCase());
+        if (lnConfig) {
+          lunchFeeAmount = lnConfig.feeAmount || 0;
+        }
+      }
 
       const student = await models.Student.create({
         studentId,
@@ -287,6 +443,42 @@ router.post('/import', authenticate, authorize(['SUPER_ADMIN']), async (req, res
           balanceAmount: 0,
           status: 'Pending',
           issuedItems: []
+        },
+
+        // Transportation fields
+        transportEnrollment: s.transportEnrollment || 'No',
+        transportType: s.transportType || null,
+        busRoute: s.busRoute || '',
+        busNumber: finalBusNumber,
+        pickupLocation: s.pickupLocation || '',
+        dropLocation: s.dropLocation || '',
+        boardingPoint: s.boardingPoint || '',
+        transportStartDate: s.transportStartDate ? new Date(s.transportStartDate) : null,
+        transportEndDate: s.transportEndDate ? new Date(s.transportEndDate) : null,
+        transportRemarks: s.transportRemarks || '',
+        outsourcedName: s.outsourcedName || '',
+        outsourcedContactPerson: s.outsourcedContactPerson || '',
+        outsourcedContactNumber: s.outsourcedContactNumber || '',
+        outsourcedRoute: s.outsourcedRoute || '',
+        outsourcedPickup: s.outsourcedPickup || '',
+        outsourcedDrop: s.outsourcedDrop || '',
+        transportFee: {
+          feeAmount: transportFeeAmount,
+          amountPaid: 0,
+          balanceAmount: transportFeeAmount,
+          status: (s.transportEnrollment === 'Yes' && s.transportType === 'School Bus') ? 'Pending' : 'Not Applicable',
+          updatedBy: req.user.id
+        },
+
+        // Lunch fields
+        lunchEnrollment: s.lunchEnrollment || 'Not Taking School Lunch',
+        lunchPeriod: s.lunchPeriod || null,
+        lunchFee: {
+          feeAmount: lunchFeeAmount,
+          amountPaid: 0,
+          balanceAmount: lunchFeeAmount,
+          status: (s.lunchEnrollment === 'Lunch at School') ? 'Pending' : 'Not Applicable',
+          updatedBy: req.user.id
         }
       });
 
