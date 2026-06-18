@@ -36,3 +36,4 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 <!-- Deploy trigger to apply new Vercel Root Directory settings -->
+<!-- Trigger 2: Rebuild with Next.js Framework Preset active -->
