@@ -137,7 +137,18 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
     itemsIssued, // Array of uniform items selected
     feeAmount,
     amountPaid,
-    paymentMethod
+    paymentMethod,
+    
+    // Optional services enrollment updates
+    transportEnrollment,
+    transportType,
+    busRoute,
+    busNumber,
+    pickupLocation,
+    dropLocation,
+    boardingPoint,
+    lunchEnrollment,
+    lunchPeriod
   } = req.body;
 
   if (!studentId || !requestId || !itemsIssued || amountPaid === undefined || !paymentMethod) {
@@ -171,6 +182,53 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
     student.uniformFee.issuedItems = itemsIssued;
     student.uniformFee.paymentMethod = paymentMethod;
     student.uniformFee.updatedBy = req.user.id;
+
+    // Save optional services choices if provided
+    if (transportEnrollment !== undefined) {
+      student.transportEnrollment = transportEnrollment;
+      student.transportType = transportType;
+      student.busRoute = busRoute || '';
+      
+      let transportFeeAmount = 0;
+      if (transportEnrollment === 'Yes' && transportType === 'School Bus' && busRoute) {
+        const transConfig = await models.TransportConfig.findOne({ route: busRoute });
+        if (transConfig) {
+          transportFeeAmount = transConfig.feeAmount || 0;
+          student.busNumber = transConfig.busNumber || busNumber || '';
+        }
+        student.transportFee.feeAmount = transportFeeAmount;
+        student.transportFee.balanceAmount = transportFeeAmount;
+        student.transportFee.status = 'Pending';
+      } else {
+        student.busNumber = '';
+        student.transportFee.feeAmount = 0;
+        student.transportFee.balanceAmount = 0;
+        student.transportFee.status = 'Not Applicable';
+      }
+      student.pickupLocation = pickupLocation || '';
+      student.dropLocation = dropLocation || '';
+      student.boardingPoint = boardingPoint || '';
+    }
+
+    if (lunchEnrollment !== undefined) {
+      student.lunchEnrollment = lunchEnrollment;
+      student.lunchPeriod = lunchPeriod;
+      
+      let lunchFeeAmount = 0;
+      if (lunchEnrollment === 'Lunch at School' && lunchPeriod) {
+        const lnConfig = await models.LunchConfig.findOne({ period: lunchPeriod });
+        if (lnConfig) {
+          lunchFeeAmount = lnConfig.feeAmount || 0;
+        }
+        student.lunchFee.feeAmount = lunchFeeAmount;
+        student.lunchFee.balanceAmount = lunchFeeAmount;
+        student.lunchFee.status = 'Pending';
+      } else {
+        student.lunchFee.feeAmount = 0;
+        student.lunchFee.balanceAmount = 0;
+        student.lunchFee.status = 'Not Applicable';
+      }
+    }
 
     // Transition student clearance status based on transport & lunch enrollment
     let nextStatus = 'COMPLETED';
@@ -270,7 +328,22 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
 // @desc    Submit Transportation Fee Payment (Step 2)
 // @access  Private (Uniform Staff and Super Admin)
 router.post('/transport', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN']), async (req, res) => {
-  const { studentId, requestId, feeAmount, amountPaid, paymentMethod } = req.body;
+  const { 
+    studentId, 
+    requestId, 
+    feeAmount, 
+    amountPaid, 
+    paymentMethod,
+    
+    // Updates
+    transportEnrollment,
+    transportType,
+    busRoute,
+    busNumber,
+    pickupLocation,
+    dropLocation,
+    boardingPoint
+  } = req.body;
 
   if (!studentId || !requestId || amountPaid === undefined || !paymentMethod) {
     return res.status(400).json({ message: 'Please provide student, request, fee details, and payment method' });
@@ -280,24 +353,53 @@ router.post('/transport', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN'
     const student = await models.Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
-    const totalFee = Number(feeAmount);
-    const amtPaid = Number(amountPaid);
-
-    if (amtPaid !== totalFee) {
-      return res.status(400).json({ message: 'Partial payment is not allowed. Full payment of transportation fees is required.' });
-    }
-
     const oldStudent = JSON.parse(JSON.stringify(student));
     const oldTransportFee = JSON.parse(JSON.stringify(student.transportFee || {}));
 
-    // Update Transport Fee details inside the Student document
-    student.transportFee.feeAmount = totalFee;
-    student.transportFee.amountPaid = amtPaid;
-    student.transportFee.balanceAmount = 0;
-    student.transportFee.status = 'Paid';
-    student.transportFee.paymentDate = new Date();
-    student.transportFee.paymentMethod = paymentMethod;
-    student.transportFee.updatedBy = req.user.id;
+    // Update Transport Details & Fee inside the Student document
+    if (transportEnrollment !== undefined) {
+      student.transportEnrollment = transportEnrollment;
+      student.transportType = transportType;
+      student.busRoute = busRoute || '';
+      
+      let finalFee = Number(feeAmount);
+      if (transportEnrollment === 'Yes' && transportType === 'School Bus' && busRoute) {
+        const transConfig = await models.TransportConfig.findOne({ route: busRoute });
+        if (transConfig) {
+          finalFee = transConfig.feeAmount || 0;
+          student.busNumber = transConfig.busNumber || busNumber || '';
+        }
+        student.transportFee.feeAmount = finalFee;
+        student.transportFee.amountPaid = Number(amountPaid);
+        student.transportFee.balanceAmount = 0;
+        student.transportFee.status = 'Paid';
+        student.transportFee.paymentDate = new Date();
+        student.transportFee.paymentMethod = paymentMethod;
+        student.transportFee.updatedBy = req.user.id;
+      } else {
+        student.busNumber = '';
+        student.transportFee.feeAmount = 0;
+        student.transportFee.amountPaid = 0;
+        student.transportFee.balanceAmount = 0;
+        student.transportFee.status = 'Not Applicable';
+      }
+      student.pickupLocation = pickupLocation || '';
+      student.dropLocation = dropLocation || '';
+      student.boardingPoint = boardingPoint || '';
+    } else {
+      const totalFee = Number(feeAmount);
+      const amtPaid = Number(amountPaid);
+      if (amtPaid !== totalFee) {
+        return res.status(400).json({ message: 'Partial payment is not allowed. Full payment of transportation fees is required.' });
+      }
+      student.transportFee.feeAmount = totalFee;
+      student.transportFee.amountPaid = amtPaid;
+      student.transportFee.balanceAmount = 0;
+      student.transportFee.status = 'Paid';
+      student.transportFee.paymentDate = new Date();
+      student.transportFee.paymentMethod = paymentMethod;
+      student.transportFee.updatedBy = req.user.id;
+    }
 
     // Determine next step
     let nextStatus = 'COMPLETED';
@@ -395,7 +497,17 @@ router.post('/transport', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN'
 // @desc    Submit Lunch Fee Payment (Step 3)
 // @access  Private (Uniform Staff and Super Admin)
 router.post('/lunch', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN']), async (req, res) => {
-  const { studentId, requestId, feeAmount, amountPaid, paymentMethod } = req.body;
+  const { 
+    studentId, 
+    requestId, 
+    feeAmount, 
+    amountPaid, 
+    paymentMethod,
+    
+    // Updates
+    lunchEnrollment,
+    lunchPeriod
+  } = req.body;
 
   if (!studentId || !requestId || amountPaid === undefined || !paymentMethod) {
     return res.status(400).json({ message: 'Please provide student, request, fee details, and payment method' });
@@ -405,24 +517,47 @@ router.post('/lunch', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN']), 
     const student = await models.Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
-    const totalFee = Number(feeAmount);
-    const amtPaid = Number(amountPaid);
-
-    if (amtPaid !== totalFee) {
-      return res.status(400).json({ message: 'Partial payment is not allowed. Full payment of lunch fees is required.' });
-    }
-
     const oldStudent = JSON.parse(JSON.stringify(student));
     const oldLunchFee = JSON.parse(JSON.stringify(student.lunchFee || {}));
 
-    // Update Lunch Fee details inside the Student document
-    student.lunchFee.feeAmount = totalFee;
-    student.lunchFee.amountPaid = amtPaid;
-    student.lunchFee.balanceAmount = 0;
-    student.lunchFee.status = 'Paid';
-    student.lunchFee.paymentDate = new Date();
-    student.lunchFee.paymentMethod = paymentMethod;
-    student.lunchFee.updatedBy = req.user.id;
+    // Update Lunch Details & Fee inside the Student document
+    if (lunchEnrollment !== undefined) {
+      student.lunchEnrollment = lunchEnrollment;
+      student.lunchPeriod = lunchPeriod;
+      
+      let finalFee = Number(feeAmount);
+      if (lunchEnrollment === 'Lunch at School' && lunchPeriod) {
+        const lnConfig = await models.LunchConfig.findOne({ period: lunchPeriod });
+        if (lnConfig) {
+          finalFee = lnConfig.feeAmount || 0;
+        }
+        student.lunchFee.feeAmount = finalFee;
+        student.lunchFee.amountPaid = Number(amountPaid);
+        student.lunchFee.balanceAmount = 0;
+        student.lunchFee.status = 'Paid';
+        student.lunchFee.paymentDate = new Date();
+        student.lunchFee.paymentMethod = paymentMethod;
+        student.lunchFee.updatedBy = req.user.id;
+      } else {
+        student.lunchFee.feeAmount = 0;
+        student.lunchFee.amountPaid = 0;
+        student.lunchFee.balanceAmount = 0;
+        student.lunchFee.status = 'Not Applicable';
+      }
+    } else {
+      const totalFee = Number(feeAmount);
+      const amtPaid = Number(amountPaid);
+      if (amtPaid !== totalFee) {
+        return res.status(400).json({ message: 'Partial payment is not allowed. Full payment of lunch fees is required.' });
+      }
+      student.lunchFee.feeAmount = totalFee;
+      student.lunchFee.amountPaid = amtPaid;
+      student.lunchFee.balanceAmount = 0;
+      student.lunchFee.status = 'Paid';
+      student.lunchFee.paymentDate = new Date();
+      student.lunchFee.paymentMethod = paymentMethod;
+      student.lunchFee.updatedBy = req.user.id;
+    }
 
     // Transition student clearance status to COMPLETED (Final clearance)
     student.clearanceStatus = 'COMPLETED';

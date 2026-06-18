@@ -522,11 +522,27 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
           'Lunch Period (Monthly/Quarterly/Annual)': 'lunchPeriod'
         };
 
-        // Validate headers are present in the sheet
+        const requiredHeaders = [
+          'Admission Number',
+          'Student Name',
+          'Gender',
+          'Date of Birth (YYYY-MM-DD)',
+          'School Board (CBSE/ICSE)',
+          'Class',
+          'Section',
+          'Roll Number',
+          'Father Name',
+          'Mother Name',
+          'Parent Mobile',
+          'Residential Address',
+          'Academic Year (e.g. 2026-2027)'
+        ];
+
+        // Validate critical headers are present in the sheet
         const excelKeys = Object.keys(jsonData[0]);
-        const missingHeaders = Object.keys(headerMapping).filter(h => !excelKeys.includes(h));
-        if (missingHeaders.length > 5) { // Allow slight format mismatch but block totally unrelated spreadsheets
-          setBulkError(`Format mismatch. Missing spreadsheet columns: ${missingHeaders.slice(0, 3).join(', ')}...`);
+        const missingCritical = requiredHeaders.filter(h => !excelKeys.includes(h));
+        if (missingCritical.length > 0) {
+          setBulkError(`Format mismatch. Missing critical spreadsheet columns: ${missingCritical.slice(0, 3).join(', ')}...`);
           return;
         }
 
@@ -552,6 +568,11 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
 
             student[key] = val;
           });
+
+          // Optional field fallbacks for missing columns
+          if (!student.transportEnrollment) student.transportEnrollment = 'No';
+          if (!student.transportType) student.transportType = 'Parent Transport';
+          if (!student.lunchEnrollment) student.lunchEnrollment = 'Not Taking School Lunch';
 
           const requiredFields = {
             admissionNumber: 'Admission Number',

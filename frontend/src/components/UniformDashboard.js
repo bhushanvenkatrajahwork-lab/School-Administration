@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Shirt, Users, CheckCircle, Clock, Check, X, AlertCircle, Loader2, User, Mail, Shield, ArrowRight, Search } from 'lucide-react';
+import { Shirt, Users, CheckCircle, Clock, Check, X, AlertCircle, Loader2, User, Mail, Shield, ArrowRight, Search, FileDown, Bus, Utensils } from 'lucide-react';
 
 export default function UniformDashboard({ activeTab, setActiveTab }) {
   const { user } = useAuth();
@@ -34,6 +34,92 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // 3-step wizard stepper states
+  const [currentStep, setCurrentStep] = useState(1);
+  const [transportFeeAmount, setTransportFeeAmount] = useState(0);
+  const [transportAmountPaid, setTransportAmountPaid] = useState('');
+  const [transportPaymentMethod, setTransportPaymentMethod] = useState('Cash');
+  const [lunchFeeAmount, setLunchFeeAmount] = useState(0);
+  const [lunchAmountPaid, setLunchAmountPaid] = useState('');
+  const [lunchPaymentMethod, setLunchPaymentMethod] = useState('Cash');
+  const [uniformReceipt, setUniformReceipt] = useState(null);
+  const [transportReceipt, setTransportReceipt] = useState(null);
+  const [lunchReceipt, setLunchReceipt] = useState(null);
+
+  // Dynamic service configuration lists
+  const [allRoutesList, setAllRoutesList] = useState([]);
+  const [allLunchPeriodsList, setAllLunchPeriodsList] = useState([]);
+
+  // Temporary service enrollment selections (editable by store manager)
+  const [tempTransportEnrollment, setTempTransportEnrollment] = useState('No');
+  const [tempTransportType, setTempTransportType] = useState('Parent Transport');
+  const [tempBusRoute, setTempBusRoute] = useState('');
+  const [tempBusNumber, setTempBusNumber] = useState('');
+  const [tempPickupLocation, setTempPickupLocation] = useState('');
+  const [tempDropLocation, setTempDropLocation] = useState('');
+  const [tempBoardingPoint, setTempBoardingPoint] = useState('');
+
+  const [tempLunchEnrollment, setTempLunchEnrollment] = useState('Not Taking School Lunch');
+  const [tempLunchPeriod, setTempLunchPeriod] = useState('Monthly');
+
+  // Helper function to update Transport Fee based on Route & Type
+  const updateTransportFee = (enrollment, type, route, routes = allRoutesList) => {
+    if (enrollment === 'Yes' && type === 'School Bus') {
+      const match = routes.find(r => r.route?.toLowerCase() === route?.toLowerCase());
+      const fee = match ? match.feeAmount : (routes[0]?.feeAmount || 3000);
+      setTransportFeeAmount(fee);
+      setTransportAmountPaid(fee.toString());
+      if (match) {
+        setTempBusNumber(match.busNumber || '');
+      }
+    } else {
+      setTransportFeeAmount(0);
+      setTransportAmountPaid('0');
+      setTempBusNumber('');
+    }
+  };
+
+  // Helper function to update Lunch Fee based on Period & Enrollment
+  const updateLunchFee = (enrollment, period, periods = allLunchPeriodsList) => {
+    if (enrollment === 'Lunch at School') {
+      const match = periods.find(p => p.period?.toLowerCase() === period?.toLowerCase());
+      const fee = match ? match.feeAmount : (
+        period === 'Annual' ? 25000 : 
+        period === 'Quarterly' ? 7000 : 2500
+      );
+      setLunchFeeAmount(fee);
+      setLunchAmountPaid(fee.toString());
+    } else {
+      setLunchFeeAmount(0);
+      setLunchAmountPaid('0');
+    }
+  };
+
+  const handleTransportEnrollmentChange = (enrollment) => {
+    setTempTransportEnrollment(enrollment);
+    updateTransportFee(enrollment, tempTransportType, tempBusRoute);
+  };
+
+  const handleTransportTypeChange = (type) => {
+    setTempTransportType(type);
+    updateTransportFee(tempTransportEnrollment, type, tempBusRoute);
+  };
+
+  const handleBusRouteChange = (route) => {
+    setTempBusRoute(route);
+    updateTransportFee(tempTransportEnrollment, tempTransportType, route);
+  };
+
+  const handleLunchEnrollmentChange = (enrollment) => {
+    setTempLunchEnrollment(enrollment);
+    updateLunchFee(enrollment, tempLunchPeriod);
+  };
+
+  const handleLunchPeriodChange = (period) => {
+    setTempLunchPeriod(period);
+    updateLunchFee(tempLunchEnrollment, period);
+  };
 
   useEffect(() => {
     fetchStats();
@@ -127,23 +213,70 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
     }
   };
 
-  // Accept action: opens distribution form
+  // Accept action: opens distribution form & setups wizard stepper
   const handleAcceptClick = async (request) => {
     setActiveRequest(request);
     setFormError('');
     setSelectedItems([]);
     setAmountPaid('');
+    setUniformReceipt(null);
+    setTransportReceipt(null);
+    setLunchReceipt(null);
+
+    // Initial step determination
+    const status = request.student.clearanceStatus;
+    if (status === 'TRANSPORT_PENDING') {
+      setCurrentStep(2);
+    } else if (status === 'LUNCH_PENDING') {
+      setCurrentStep(3);
+    } else {
+      setCurrentStep(1);
+    }
+
+    const st = request.student;
+    // Prefill the temp selection states with the student's existing values.
+    setTempTransportEnrollment(st.transportEnrollment || 'No');
+    setTempTransportType(st.transportType || 'Parent Transport');
+    setTempBusRoute(st.busRoute || '');
+    setTempBusNumber(st.busNumber || '');
+    setTempPickupLocation(st.pickupLocation || '');
+    setTempDropLocation(st.dropLocation || '');
+    setTempBoardingPoint(st.boardingPoint || '');
+
+    setTempLunchEnrollment(st.lunchEnrollment || 'Not Taking School Lunch');
+    setTempLunchPeriod(st.lunchPeriod || 'Monthly');
 
     try {
-      const config = await api.get(`/fees/uniforms/config/${request.student.class}`);
+      // 1. Fetch Uniform config
+      const config = await api.get(`/fees/uniforms/config/${st.class}`);
       setClassItems(config.items || []);
       setUniformFeeAmount(config.feeAmount || 2500);
-
-      // Auto select all items as default configuration
       setSelectedItems(config.items || []);
+
+      // 2. Fetch all transportation routes and lunch periods configurations
+      const routes = await api.get('/classes/transportation');
+      setAllRoutesList(routes || []);
+
+      const periods = await api.get('/classes/lunch');
+      setAllLunchPeriodsList(periods || []);
+
+      // Determine initial route and lunch period
+      const defaultRoute = st.busRoute || (routes[0]?.route || '');
+      const defaultPeriod = st.lunchPeriod || 'Monthly';
+
+      if (!st.busRoute && routes[0]?.route) {
+        setTempBusRoute(routes[0].route);
+      }
+
+      // Initialize transport fee amount setup
+      updateTransportFee(st.transportEnrollment || 'No', st.transportType || 'Parent Transport', defaultRoute, routes);
+      
+      // Initialize lunch fee amount setup
+      updateLunchFee(st.lunchEnrollment || 'Not Taking School Lunch', defaultPeriod, periods);
+
     } catch (err) {
       console.error(err);
-      setFormError('Failed to load class uniform configs');
+      setFormError('Failed to load catalog configurations');
     }
   };
 
@@ -156,7 +289,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
     }
   };
 
-  // Handle form submission
+  // Handle Step 1: Uniform form submission
   const handleDistributionSubmit = async (e) => {
     e.preventDefault();
     if (isSubmittingRef.current) return;
@@ -170,28 +303,229 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
     setFormError('');
 
     try {
-      await api.post('/fees/uniforms/distribute', {
+      const res = await api.post('/fees/uniforms/distribute', {
         studentId: activeRequest.student._id,
         requestId: activeRequest._id,
         itemsIssued: selectedItems,
         feeAmount: uniformFeeAmount,
         amountPaid: Number(amountPaid),
-        paymentMethod
+        paymentMethod,
+        
+        // Dynamic services configurations
+        transportEnrollment: tempTransportEnrollment,
+        transportType: tempTransportType,
+        busRoute: tempBusRoute,
+        busNumber: tempBusNumber,
+        pickupLocation: tempPickupLocation,
+        dropLocation: tempDropLocation,
+        boardingPoint: tempBoardingPoint,
+        lunchEnrollment: tempLunchEnrollment,
+        lunchPeriod: tempLunchPeriod
       });
 
-      setSuccessMsg('Uniform clearance completed successfully!');
-      setTimeout(() => {
-        setActiveRequest(null);
-        setSuccessMsg('');
+      if (res.payment) {
+        setUniformReceipt(res.payment);
+      }
+
+      const nextStatus = res.clearanceStatus;
+      if (nextStatus === 'TRANSPORT_PENDING') {
+        setCurrentStep(2);
+      } else if (nextStatus === 'LUNCH_PENDING') {
+        setCurrentStep(3);
+      } else {
+        // Completed
+        setCurrentStep(4);
+        setSuccessMsg('Uniform clearance completed successfully!');
         fetchStats();
         fetchQueue();
-      }, 1500);
+      }
     } catch (err) {
       setFormError(err.message || 'Uniform distribution submission failed');
     } finally {
       isSubmittingRef.current = false;
       setFormSubmitting(false);
     }
+  };
+
+  // Handle Step 2: Transportation form submission
+  const handleTransportSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingRef.current) return;
+    if (Number(transportAmountPaid) !== transportFeeAmount) {
+      setFormError(`Transportation fee must be paid in full (₹${transportFeeAmount.toLocaleString()}). Partial payment is not allowed.`);
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setFormSubmitting(true);
+    setFormError('');
+
+    try {
+      const res = await api.post('/fees/uniforms/transport', {
+        studentId: activeRequest.student._id,
+        requestId: activeRequest._id,
+        feeAmount: transportFeeAmount,
+        amountPaid: Number(transportAmountPaid),
+        paymentMethod: transportPaymentMethod,
+
+        // Pass latest transport configuration choices
+        transportEnrollment: tempTransportEnrollment,
+        transportType: tempTransportType,
+        busRoute: tempBusRoute,
+        busNumber: tempBusNumber,
+        pickupLocation: tempPickupLocation,
+        dropLocation: tempDropLocation,
+        boardingPoint: tempBoardingPoint
+      });
+
+      if (res.payment) {
+        setTransportReceipt(res.payment);
+      }
+
+      const nextStatus = res.clearanceStatus;
+      if (nextStatus === 'LUNCH_PENDING') {
+        setCurrentStep(3);
+      } else {
+        // Completed
+        setCurrentStep(4);
+        setSuccessMsg('Transportation fee payment completed successfully!');
+        fetchStats();
+        fetchQueue();
+      }
+    } catch (err) {
+      setFormError(err.message || 'Transportation fee submission failed');
+    } finally {
+      isSubmittingRef.current = false;
+      setFormSubmitting(false);
+    }
+  };
+
+  // Handle Step 3: Lunch form submission
+  const handleLunchSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingRef.current) return;
+    if (Number(lunchAmountPaid) !== lunchFeeAmount) {
+      setFormError(`Lunch fee must be paid in full (₹${lunchFeeAmount.toLocaleString()}). Partial payment is not allowed.`);
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setFormSubmitting(true);
+    setFormError('');
+
+    try {
+      const res = await api.post('/fees/uniforms/lunch', {
+        studentId: activeRequest.student._id,
+        requestId: activeRequest._id,
+        feeAmount: lunchFeeAmount,
+        amountPaid: Number(lunchAmountPaid),
+        paymentMethod: lunchPaymentMethod,
+
+        // Pass latest lunch configuration choices
+        lunchEnrollment: tempLunchEnrollment,
+        lunchPeriod: tempLunchPeriod
+      });
+
+      if (res.payment) {
+        setLunchReceipt(res.payment);
+      }
+
+      setCurrentStep(4);
+      setSuccessMsg('Lunch facility fee payment completed successfully!');
+      fetchStats();
+      fetchQueue();
+    } catch (err) {
+      setFormError(err.message || 'Lunch fee submission failed');
+    } finally {
+      isSubmittingRef.current = false;
+      setFormSubmitting(false);
+    }
+  };
+
+  // Print receipt function
+  const handlePrintReceipt = (payment) => {
+    if (!payment) return;
+    const printContent = `
+      <html>
+        <head>
+          <title>Fee Receipt - \${payment.receiptNumber}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; padding: 40px; line-height: 1.5; }
+            .receipt-box { border: 2px solid #eaeaea; padding: 30px; border-radius: 12px; max-width: 600px; margin: auto; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px dashed #eaeaea; padding-bottom: 20px; margin-bottom: 20px; }
+            .school-logo { font-size: 24px; font-weight: bold; color: #1e3a8a; display: flex; align-items: center; }
+            .title { text-align: right; }
+            .title h1 { margin: 0; font-size: 20px; color: #1e3a8a; text-transform: uppercase; }
+            .title p { margin: 5px 0 0 0; font-size: 12px; color: #666; }
+            .details { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 25px; font-size: 13px; }
+            .details div p { margin: 3px 0; }
+            .details .label { font-weight: bold; color: #555; }
+            .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+            .table th { background: #f8fafc; text-align: left; padding: 10px; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #eaeaea; }
+            .table td { padding: 12px 10px; border-bottom: 1px solid #eaeaea; font-size: 13px; }
+            .total-section { display: flex; justify-content: flex-end; font-size: 14px; font-weight: bold; margin-bottom: 30px; }
+            .footer { text-align: center; border-top: 1px solid #eaeaea; padding-top: 20px; font-size: 11px; color: #777; }
+            .footer p { margin: 3px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-box">
+            <div class="header">
+              <div class="school-logo">EduClearance Academy</div>
+              <div class="title">
+                <h1>Official Receipt</h1>
+                <p>Receipt No: \${payment.receiptNumber}</p>
+              </div>
+            </div>
+            
+            <div class="details">
+              <div>
+                <p><span class="label">Student ID:</span> \${activeRequest?.student?.studentId || 'N/A'}</p>
+                <p><span class="label">Admission No:</span> \${activeRequest?.student?.admissionNumber || 'N/A'}</p>
+                <p><span class="label">Name:</span> \${activeRequest?.student?.name || 'N/A'}</p>
+                <p><span class="label">Class & Section:</span> \${activeRequest?.student?.class || 'N/A'} - \${activeRequest?.student?.section || 'N/A'}</p>
+              </div>
+              <div>
+                <p><span class="label">Receipt Date:</span> \${new Date(payment.paymentDate).toLocaleDateString()}</p>
+                <p><span class="label">Payment Method:</span> \${payment.paymentMethod}</p>
+                <p><span class="label">Transaction Ref:</span> \${payment.transactionRef || 'N/A'}</p>
+                <p><span class="label">Authorized By:</span> \${payment.staffName}</p>
+              </div>
+            </div>
+            
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th style="text-align: right;">Amount Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>\${payment.feeType} Fee Payment Clearance</td>
+                  <td style="text-align: right;">₹\${payment.amount.toLocaleString('en-IN')}</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <div class="total-section">
+              <span>Total Received: ₹\${payment.amount.toLocaleString('en-IN')}</span>
+            </div>
+            
+            <div class="footer">
+              <p>Thank you for your payment!</p>
+              <p>This is a system-generated official fee receipt of EduClearance Academy.</p>
+              <p>Date Generated: \${new Date().toLocaleString()}</p>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   return (
@@ -486,15 +820,14 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
         )}
       </div>
 
-      {/* ========================================== */}
-      {/* 3. UNIFORM DISTRIBUTION MODAL */}
+      {/* ==========================================       {/* 3. UNIFORM DISTRIBUTION MODAL */}
       {/* ========================================== */}
       {activeRequest && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-slide-up">
             <div className="px-6 py-4 bg-[#0B192C] text-white flex justify-between items-center">
               <div>
-                <h4 className="text-sm font-bold">Uniform Distribution Checklist</h4>
+                <h4 className="text-sm font-bold">Uniform &amp; Services Clearance Stepper</h4>
                 <p className="text-[10px] text-slate-300">Student: {activeRequest.student.name} ({activeRequest.student.studentId})</p>
               </div>
               <button onClick={() => setActiveRequest(null)} className="text-slate-400 hover:text-white">
@@ -502,118 +835,283 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
               </button>
             </div>
 
-            <form onSubmit={handleDistributionSubmit} className="p-6 space-y-4">
-              
-              {/* Info grid */}
-              <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs">
-                <div>
-                  <span className="block text-[10px] text-slate-400">Class &amp; Section</span>
-                  <span className="font-semibold text-slate-800">{activeRequest.student.class} - {activeRequest.student.section}</span>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-slate-400">Roll Number</span>
-                  <span className="font-semibold text-slate-800">{activeRequest.student.rollNumber}</span>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-slate-400">School Board</span>
-                  <span className="font-semibold text-slate-800">{activeRequest.student.schoolType}</span>
-                </div>
-              </div>
-
-              {/* Uniform checklist */}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">
-                  Select Uniform Items Issued
-                </label>
-                <div className="grid grid-cols-2 gap-2 bg-slate-50/50 p-4 border border-slate-200 rounded-xl max-h-40 overflow-y-auto">
-                  {classItems.length === 0 ? (
-                    <p className="text-xs text-slate-400 col-span-2 text-center py-2">No uniform items configured for this class.</p>
-                  ) : (
-                    classItems.map((item, idx) => {
-                      const isChecked = selectedItems.includes(item);
-                      return (
-                        <button
-                          type="button"
-                          key={idx}
-                          onClick={() => handleItemToggle(item)}
-                          className={`flex items-center space-x-2.5 p-2 rounded-lg text-xs font-medium text-left border cursor-pointer transition-colors ${
-                            isChecked 
-                              ? 'bg-rose-50 text-rose-800 border-rose-300 shadow-sm' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 ${
-                            isChecked ? 'bg-rose-600 border-rose-600 text-white' : 'border-slate-300 bg-white'
-                          }`}>
-                            {isChecked && <Check className="h-3 w-3" />}
-                          </div>
-                          <span className="truncate">{item}</span>
-                        </button>
-                      );
-                    })
+            {/* Stepper Wizard Header */}
+            {currentStep < 4 && (
+              <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-1.5">
+                    <span className={`h-5 w-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                      currentStep === 1 
+                        ? 'bg-rose-600 text-white' 
+                        : currentStep > 1 
+                          ? 'bg-emerald-500 text-white' 
+                          : 'bg-slate-200 text-slate-650'
+                    }`}>
+                      {currentStep > 1 ? '✓' : '1'}
+                    </span>
+                    <span className={`font-bold ${currentStep === 1 ? 'text-slate-800' : 'text-slate-450'}`}>Uniforms</span>
+                  </div>
+                  
+                  {tempTransportEnrollment === 'Yes' && tempTransportType === 'School Bus' && (
+                    <>
+                      <span className="text-slate-300">/</span>
+                      <div className="flex items-center space-x-1.5">
+                        <span className={`h-5 w-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          currentStep === 2 
+                            ? 'bg-rose-600 text-white' 
+                            : currentStep > 2 
+                              ? 'bg-emerald-500 text-white' 
+                              : 'bg-slate-200 text-slate-650'
+                        }`}>
+                          {currentStep > 2 ? '✓' : '2'}
+                        </span>
+                        <span className={`font-bold ${currentStep === 2 ? 'text-slate-800' : 'text-slate-450'}`}>Transportation</span>
+                      </div>
+                    </>
+                  )}
+ 
+                  {tempLunchEnrollment === 'Lunch at School' && (
+                    <>
+                      <span className="text-slate-300">/</span>
+                      <div className="flex items-center space-x-1.5">
+                        <span className={`h-5 w-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          currentStep === 3 
+                            ? 'bg-rose-600 text-white' 
+                            : currentStep > 3 
+                              ? 'bg-emerald-550 text-white' 
+                              : 'bg-slate-200 text-slate-650'
+                        }`}>
+                          {currentStep > 3 ? '✓' : '3'}
+                        </span>
+                        <span className={`font-bold ${currentStep === 3 ? 'text-slate-800' : 'text-slate-450'}`}>Lunch Facility</span>
+                      </div>
+                    </>
                   )}
                 </div>
-              </div>
-
-              {/* Uniform Fee and payment Details */}
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-xs">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-medium">Standard Uniform Fee:</span>
-                    <span className="font-semibold text-slate-800">₹{uniformFeeAmount.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500 font-medium">Amount Paid (₹):</span>
-                    <input
-                      type="number"
-                      required
-                      value={amountPaid}
-                      onChange={(e) => setAmountPaid(e.target.value)}
-                      placeholder="Amount collected"
-                      className="w-24 border border-slate-200 rounded-lg px-2 py-1 text-right focus:outline-none focus:border-rose-600 font-bold"
-                    />
-                  </div>
-                  <div className="flex justify-between text-rose-750 font-bold border-t border-dashed border-slate-200 pt-2 text-rose-700">
-                    <span>Balance Outstanding:</span>
-                    <span>₹{Math.max(0, uniformFeeAmount - (Number(amountPaid) || 0)).toLocaleString()}</span>
-                  </div>
+                
+                <div className="text-[10px] text-slate-455 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-250">
+                  Step {currentStep} of {
+                    1 + 
+                    (tempTransportEnrollment === 'Yes' && tempTransportType === 'School Bus' ? 1 : 0) +
+                    (tempLunchEnrollment === 'Lunch at School' ? 1 : 0)
+                  }
                 </div>
+              </div>
+            )}
 
-                <div className="space-y-3 bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl">
+            {/* Step 1: Uniform Checklist & Payment */}
+            {currentStep === 1 && (
+              <form onSubmit={handleDistributionSubmit} className="p-6 space-y-4">
+                
+                {/* Info grid */}
+                <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs">
                   <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">PAYMENT METHOD</label>
-                    <select
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer"
-                    >
-                      <option value="Cash">Cash Handover</option>
-                      <option value="UPI">UPI (GPay/Paytm)</option>
-                      <option value="Card">Card Terminal Swipe</option>
-                    </select>
+                    <span className="block text-[10px] text-slate-455">Class &amp; Section</span>
+                    <span className="font-semibold text-slate-800">{activeRequest.student.class} - {activeRequest.student.section}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-455">Roll Number</span>
+                    <span className="font-semibold text-slate-800">{activeRequest.student.rollNumber}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-455">School Board</span>
+                    <span className="font-semibold text-slate-800">{activeRequest.student.schoolType}</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Action and errors */}
-              <div className="border-t border-slate-100 pt-4 flex flex-col space-y-3">
-                {formError && (
-                  <p className="text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-lg border border-red-200">{formError}</p>
-                )}
+                {/* Uniform checklist */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">
+                    Select Uniform Items Issued
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50/50 p-4 border border-slate-200 rounded-xl max-h-40 overflow-y-auto">
+                    {classItems.length === 0 ? (
+                      <p className="text-xs text-slate-405 col-span-2 text-center py-2">No uniform items configured for this class.</p>
+                    ) : (
+                      classItems.map((item, idx) => {
+                        const isChecked = selectedItems.includes(item);
+                        return (
+                          <button
+                            type="button"
+                            key={idx}
+                            onClick={() => handleItemToggle(item)}
+                            className={`flex items-center space-x-2.5 p-2 rounded-lg text-xs font-medium text-left border cursor-pointer transition-colors ${
+                              isChecked 
+                                ? 'bg-rose-550/10 text-rose-800 border-rose-300 shadow-sm' 
+                                : 'bg-white text-slate-605 border-slate-200 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 ${
+                              isChecked ? 'bg-rose-600 border-rose-600 text-white' : 'border-slate-300 bg-white'
+                            }`}>
+                              {isChecked && <Check className="h-3 w-3" />}
+                            </div>
+                            <span className="truncate">{item}</span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
 
-                {successMsg && (
-                  <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-center">{successMsg}</p>
-                )}
+                {/* Services Enrollment Details */}
+                <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-4 text-xs">
+                  <h5 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] border-b border-slate-200/60 pb-1.5 flex items-center gap-1.5">
+                    <Bus className="h-3.5 w-3.5 text-rose-600" />
+                    <span>Dynamic Service Enrollment</span>
+                  </h5>
 
-                {successMsg ? (
-                  <button
-                    type="button"
-                    disabled={true}
-                    className="w-full flex justify-center py-2.5 px-4 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 bg-slate-100 cursor-not-allowed"
-                  >
-                    Uniform Clearance Completed (Fully Paid)
-                  </button>
-                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Transportation Card */}
+                    <div className="space-y-2.5">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Transportation</label>
+                      <select
+                        value={tempTransportEnrollment}
+                        onChange={(e) => handleTransportEnrollmentChange(e.target.value)}
+                        className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                      >
+                        <option value="No">No (Opted Out)</option>
+                        <option value="Yes">Yes (Opted In)</option>
+                      </select>
+
+                      {tempTransportEnrollment === 'Yes' && (
+                        <>
+                          <div>
+                            <label className="block text-[9px] font-semibold text-slate-500 mb-0.5 uppercase">Transport Type</label>
+                            <select
+                              value={tempTransportType}
+                              onChange={(e) => handleTransportTypeChange(e.target.value)}
+                              className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                            >
+                              <option value="School Bus">School Bus</option>
+                              <option value="Parent Transport">Parent Transport</option>
+                              <option value="Outsourced Transport">Outsourced Transport</option>
+                            </select>
+                          </div>
+
+                          {tempTransportType === 'School Bus' && (
+                            <>
+                              <div>
+                                <label className="block text-[9px] font-semibold text-slate-500 mb-0.5 uppercase">Bus Route</label>
+                                <select
+                                  value={tempBusRoute}
+                                  onChange={(e) => handleBusRouteChange(e.target.value)}
+                                  className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                                >
+                                  {allRoutesList.map((r, idx) => (
+                                    <option key={idx} value={r.route}>
+                                      {r.route} (₹{r.feeAmount?.toLocaleString()})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <div>
+                                  <label className="block text-[9px] font-semibold text-slate-500 mb-0.5 uppercase">Boarding Point</label>
+                                  <input
+                                    type="text"
+                                    value={tempBoardingPoint}
+                                    onChange={(e) => setTempBoardingPoint(e.target.value)}
+                                    placeholder="e.g. Stop A"
+                                    className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 font-medium"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] font-semibold text-slate-500 mb-0.5 uppercase">Bus Number</label>
+                                  <input
+                                    type="text"
+                                    readOnly
+                                    value={tempBusNumber}
+                                    placeholder="Bus No."
+                                    className="block w-full border border-slate-200 bg-slate-100 rounded-lg px-2 py-1 text-xs focus:outline-none text-slate-500 font-mono"
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Lunch Facility Card */}
+                    <div className="space-y-2.5">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Lunch Facility</label>
+                      <select
+                        value={tempLunchEnrollment}
+                        onChange={(e) => handleLunchEnrollmentChange(e.target.value)}
+                        className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                      >
+                        <option value="Not Taking School Lunch">Not Taking School Lunch</option>
+                        <option value="Lunch at School">Lunch at School</option>
+                      </select>
+
+                      {tempLunchEnrollment === 'Lunch at School' && (
+                        <div>
+                          <label className="block text-[9px] font-semibold text-slate-500 mb-0.5 uppercase">Billing Period</label>
+                          <select
+                            value={tempLunchPeriod}
+                            onChange={(e) => handleLunchPeriodChange(e.target.value)}
+                            className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                          >
+                            {allLunchPeriodsList.map((p, idx) => (
+                              <option key={idx} value={p.period}>
+                                {p.period} (₹{p.feeAmount?.toLocaleString()})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Uniform Fee and payment Details */}
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-xs">
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Standard Uniform Fee:</span>
+                      <span className="font-semibold text-slate-800">₹{uniformFeeAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-505 font-medium">Amount Paid (₹):</span>
+                      <input
+                        type="number"
+                        required
+                        value={amountPaid}
+                        onChange={(e) => setAmountPaid(e.target.value)}
+                        placeholder="Amount collected"
+                        className="w-24 border border-slate-200 rounded-lg px-2 py-1 text-right focus:outline-none focus:border-rose-600 font-bold"
+                      />
+                    </div>
+                    <div className="flex justify-between text-rose-750 font-bold border-t border-dashed border-slate-200 pt-2 text-rose-700">
+                      <span>Balance Outstanding:</span>
+                      <span>₹{Math.max(0, uniformFeeAmount - (Number(amountPaid) || 0)).toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-1">PAYMENT METHOD</label>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer"
+                      >
+                        <option value="Cash">Cash Handover</option>
+                        <option value="UPI">UPI (GPay/Paytm)</option>
+                        <option value="Card">Card Terminal Swipe</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action and errors */}
+                <div className="border-t border-slate-100 pt-4 flex flex-col space-y-3">
+                  {formError && (
+                    <p className="text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-lg border border-red-200">{formError}</p>
+                  )}
+
                   <button
                     type="submit"
                     disabled={formSubmitting || classItems.length === 0}
@@ -622,13 +1120,340 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
                     {formSubmitting ? (
                       <Loader2 className="h-5 w-5 animate-spin mr-2" />
                     ) : (
-                      'Record Distribution & Complete Clearance'
+                      'Record Uniform Distribution & Next'
                     )}
                   </button>
-                )}
-              </div>
+                </div>
 
-            </form>
+              </form>
+            )}
+
+            {/* Step 2: Transportation Clearance */}
+            {currentStep === 2 && (
+              <form onSubmit={handleTransportSubmit} className="p-6 space-y-4">
+                {/* Route detail fields */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 text-xs space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Transportation Enrollment</label>
+                    <select
+                      value={tempTransportEnrollment}
+                      onChange={(e) => handleTransportEnrollmentChange(e.target.value)}
+                      className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                    >
+                      <option value="No">No (Opt Out/Skip Transport Fee)</option>
+                      <option value="Yes">Yes (Opted In)</option>
+                    </select>
+                  </div>
+
+                  {tempTransportEnrollment === 'Yes' && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] text-slate-500 uppercase font-semibold mb-1">Transport Type</label>
+                          <select
+                            value={tempTransportType}
+                            onChange={(e) => handleTransportTypeChange(e.target.value)}
+                            className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                          >
+                            <option value="School Bus">School Bus</option>
+                            <option value="Parent Transport">Parent Transport</option>
+                            <option value="Outsourced Transport">Outsourced Transport</option>
+                          </select>
+                        </div>
+                        
+                        {tempTransportType === 'School Bus' && (
+                          <div>
+                            <label className="block text-[10px] text-slate-500 uppercase font-semibold mb-1">Bus Route</label>
+                            <select
+                              value={tempBusRoute}
+                              onChange={(e) => handleBusRouteChange(e.target.value)}
+                              className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                            >
+                              {allRoutesList.map((r, idx) => (
+                                <option key={idx} value={r.route}>
+                                  {r.route} (₹{r.feeAmount?.toLocaleString()})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+
+                      {tempTransportType === 'School Bus' && (
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/40">
+                          <div>
+                            <label className="block text-[10px] text-slate-500 font-semibold mb-1">Boarding Point</label>
+                            <input
+                              type="text"
+                              value={tempBoardingPoint}
+                              onChange={(e) => setTempBoardingPoint(e.target.value)}
+                              placeholder="Boarding point"
+                              className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-slate-500 font-semibold mb-1">Pickup Location</label>
+                            <input
+                              type="text"
+                              value={tempPickupLocation}
+                              onChange={(e) => setTempPickupLocation(e.target.value)}
+                              placeholder="Pickup"
+                              className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-slate-500 font-semibold mb-1">Drop Location</label>
+                            <input
+                              type="text"
+                              value={tempDropLocation}
+                              onChange={(e) => setTempDropLocation(e.target.value)}
+                              placeholder="Drop"
+                              className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 font-medium"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Transport Fee and payment Details */}
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-xs">
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Transportation Route Fee:</span>
+                      <span className="font-semibold text-slate-800">₹{transportFeeAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Amount Paid (₹):</span>
+                      <input
+                        type="number"
+                        required
+                        value={transportAmountPaid}
+                        onChange={(e) => setTransportAmountPaid(e.target.value)}
+                        placeholder="Amount collected"
+                        className="w-24 border border-slate-200 rounded-lg px-2 py-1 text-right focus:outline-none focus:border-rose-600 font-bold"
+                      />
+                    </div>
+                    <div className="flex justify-between text-rose-700 font-bold border-t border-dashed border-slate-200 pt-2">
+                      <span>Balance Outstanding:</span>
+                      <span>₹{Math.max(0, transportFeeAmount - (Number(transportAmountPaid) || 0)).toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-1">PAYMENT METHOD</label>
+                      <select
+                        value={transportPaymentMethod}
+                        onChange={(e) => setTransportPaymentMethod(e.target.value)}
+                        className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                      >
+                        <option value="Cash">Cash Handover</option>
+                        <option value="UPI">UPI (GPay/Paytm)</option>
+                        <option value="Card">Card Terminal Swipe</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action and errors */}
+                <div className="border-t border-slate-100 pt-4 flex flex-col space-y-3">
+                  {formError && (
+                    <p className="text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-lg border border-red-200">{formError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={formSubmitting}
+                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {formSubmitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      'Record Transportation Clearance & Next'
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 3: Lunch Clearance */}
+            {currentStep === 3 && (
+              <form onSubmit={handleLunchSubmit} className="p-6 space-y-4">
+                {/* Meal plan info */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 text-xs space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Lunch Enrollment</label>
+                    <select
+                      value={tempLunchEnrollment}
+                      onChange={(e) => handleLunchEnrollmentChange(e.target.value)}
+                      className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                    >
+                      <option value="Not Taking School Lunch">Not Taking School Lunch</option>
+                      <option value="Lunch at School">Lunch at School</option>
+                    </select>
+                  </div>
+
+                  {tempLunchEnrollment === 'Lunch at School' && (
+                    <div>
+                      <label className="block text-[10px] text-slate-500 uppercase font-semibold mb-1">Billing Period</label>
+                      <select
+                        value={tempLunchPeriod}
+                        onChange={(e) => handleLunchPeriodChange(e.target.value)}
+                        className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                      >
+                        {allLunchPeriodsList.map((p, idx) => (
+                          <option key={idx} value={p.period}>
+                            {p.period} (₹{p.feeAmount?.toLocaleString()})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Lunch Fee and payment Details */}
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-xs">
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Lunch Plan Fee:</span>
+                      <span className="font-semibold text-slate-800">₹{lunchFeeAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Amount Paid (₹):</span>
+                      <input
+                        type="number"
+                        required
+                        value={lunchAmountPaid}
+                        onChange={(e) => setLunchAmountPaid(e.target.value)}
+                        placeholder="Amount collected"
+                        className="w-24 border border-slate-200 rounded-lg px-2 py-1 text-right focus:outline-none focus:border-rose-600 font-bold"
+                      />
+                    </div>
+                    <div className="flex justify-between text-rose-700 font-bold border-t border-dashed border-slate-200 pt-2">
+                      <span>Balance Outstanding:</span>
+                      <span>₹{Math.max(0, lunchFeeAmount - (Number(lunchAmountPaid) || 0)).toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-1">PAYMENT METHOD</label>
+                      <select
+                        value={lunchPaymentMethod}
+                        onChange={(e) => setLunchPaymentMethod(e.target.value)}
+                        className="block w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-rose-600 cursor-pointer font-medium"
+                      >
+                        <option value="Cash">Cash Handover</option>
+                        <option value="UPI">UPI (GPay/Paytm)</option>
+                        <option value="Card">Card Terminal Swipe</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action and errors */}
+                <div className="border-t border-slate-100 pt-4 flex flex-col space-y-3">
+                  {formError && (
+                    <p className="text-xs font-semibold text-red-500 bg-red-50 p-2.5 rounded-lg border border-red-200">{formError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={formSubmitting}
+                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {formSubmitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      'Record Lunch Clearance & Complete'
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 4: Complete/Success Screen */}
+            {currentStep === 4 && (
+              <div className="p-8 space-y-6 text-center">
+                <div className="h-16 w-16 bg-emerald-50 text-emerald-500 border border-emerald-250 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                  <Check className="h-10 w-10" />
+                </div>
+                
+                <div>
+                  <h5 className="text-base font-black text-slate-900">All Clearance Steps Completed!</h5>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    Student {activeRequest.student.name} is now fully cleared. Download the generated official payment receipts below:
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 max-w-md mx-auto">
+                  {uniformReceipt && (
+                    <div className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                      <div className="text-left">
+                        <span className="font-bold text-slate-850">Uniform Fee Receipt</span>
+                        <span className="block text-[10px] text-slate-400 font-mono mt-0.5">No: {uniformReceipt.receiptNumber} | Amount: ₹{uniformReceipt.amount.toLocaleString()}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handlePrintReceipt(uniformReceipt)}
+                        className="flex items-center space-x-1 font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-200/50 cursor-pointer text-[10px]"
+                      >
+                        <FileDown className="h-3.5 w-3.5" />
+                        <span>Print Receipt</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {transportReceipt && (
+                    <div className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                      <div className="text-left">
+                        <span className="font-bold text-slate-850">Transportation Fee Receipt</span>
+                        <span className="block text-[10px] text-slate-400 font-mono mt-0.5">No: {transportReceipt.receiptNumber} | Amount: ₹{transportReceipt.amount.toLocaleString()}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handlePrintReceipt(transportReceipt)}
+                        className="flex items-center space-x-1 font-bold text-cyan-600 hover:text-cyan-800 bg-cyan-50 hover:bg-cyan-100 px-3 py-1.5 rounded-lg border border-cyan-200/50 cursor-pointer text-[10px]"
+                      >
+                        <FileDown className="h-3.5 w-3.5" />
+                        <span>Print Receipt</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {lunchReceipt && (
+                    <div className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                      <div className="text-left">
+                        <span className="font-bold text-slate-850">Lunch Plan Fee Receipt</span>
+                        <span className="block text-[10px] text-slate-400 font-mono mt-0.5">No: {lunchReceipt.receiptNumber} | Amount: ₹{lunchReceipt.amount.toLocaleString()}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handlePrintReceipt(lunchReceipt)}
+                        className="flex items-center space-x-1 font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200/50 cursor-pointer text-[10px]"
+                      >
+                        <FileDown className="h-3.5 w-3.5" />
+                        <span>Print Receipt</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveRequest(null);
+                    fetchStats();
+                    fetchQueue();
+                  }}
+                  className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Done &amp; Close Clearance Modal
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

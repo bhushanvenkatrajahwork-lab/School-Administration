@@ -525,7 +525,7 @@ export default function StudentHistory({ studentId, onBack }) {
                     </>
                   )}
                 </div>
-              </div>>
+              </div>
               </div>
 
             </div>
