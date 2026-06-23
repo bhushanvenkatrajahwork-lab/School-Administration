@@ -113,7 +113,7 @@
     "_id": "mzmst78z0mqewrz09",
     "createdAt": "2026-06-15T07:45:30.105Z",
     "schoolType": "ICSE",
-    "name": "Class I",
+    "name": "Class 1",
     "sections": [
       "A",
       "B"
@@ -123,7 +123,7 @@
     "_id": "toywqspq4mqewrz12",
     "createdAt": "2026-06-15T07:45:30.134Z",
     "schoolType": "ICSE",
-    "name": "Class II",
+    "name": "Class 2",
     "sections": [
       "A",
       "B"
@@ -133,7 +133,7 @@
     "_id": "2aho95q2cmqewrz2f",
     "createdAt": "2026-06-15T07:45:30.183Z",
     "schoolType": "ICSE",
-    "name": "Class III",
+    "name": "Class 3",
     "sections": [
       "A",
       "B"
@@ -143,7 +143,7 @@
     "_id": "84k58l32umqewrz3r",
     "createdAt": "2026-06-15T07:45:30.231Z",
     "schoolType": "ICSE",
-    "name": "Class IV",
+    "name": "Class 4",
     "sections": [
       "A",
       "B"
@@ -153,7 +153,7 @@
     "_id": "dduu8i8bumqewrz4x",
     "createdAt": "2026-06-15T07:45:30.273Z",
     "schoolType": "ICSE",
-    "name": "Class V",
+    "name": "Class 5",
     "sections": [
       "A",
       "B"
@@ -163,7 +163,7 @@
     "_id": "i5n9u1yngmqewrz5l",
     "createdAt": "2026-06-15T07:45:30.297Z",
     "schoolType": "ICSE",
-    "name": "Class VI",
+    "name": "Class 6",
     "sections": [
       "A",
       "B"
@@ -173,7 +173,7 @@
     "_id": "lkewk8mqimqewrz6e",
     "createdAt": "2026-06-15T07:45:30.326Z",
     "schoolType": "ICSE",
-    "name": "Class VII",
+    "name": "Class 7",
     "sections": [
       "A",
       "B"
@@ -183,7 +183,7 @@
     "_id": "sv6hys2s5mqewrz78",
     "createdAt": "2026-06-15T07:45:30.356Z",
     "schoolType": "ICSE",
-    "name": "Class VIII",
+    "name": "Class 8",
     "sections": [
       "A",
       "B"
@@ -193,7 +193,7 @@
     "_id": "9s2vgimgmmqewrz85",
     "createdAt": "2026-06-15T07:45:30.389Z",
     "schoolType": "ICSE",
-    "name": "Class IX",
+    "name": "Class 9",
     "sections": [
       "A",
       "B"
@@ -203,7 +203,7 @@
     "_id": "hzfdr7pi7mqewrz9d",
     "createdAt": "2026-06-15T07:45:30.433Z",
     "schoolType": "ICSE",
-    "name": "Class X",
+    "name": "Class 10",
     "sections": [
       "A",
       "B"

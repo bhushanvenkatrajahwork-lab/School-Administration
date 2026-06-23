@@ -248,7 +248,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
 
     try {
       // 1. Fetch Uniform config
-      const config = await api.get(`/fees/uniforms/config/${st.class}`);
+      const config = await api.get(`/fees/uniforms/config/${st.class}?schoolType=${st.schoolType}`);
       setClassItems(config.items || []);
       setUniformFeeAmount(config.feeAmount || 2500);
       setSelectedItems(config.items || []);

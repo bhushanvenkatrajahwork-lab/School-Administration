@@ -162,6 +162,7 @@ const bookConfigSchema = new mongoose.Schema({
 // 5. UNIFORM CONFIG SCHEMA
 // ==========================================
 const uniformConfigSchema = new mongoose.Schema({
+  schoolType: { type: String, required: true, enum: ['CBSE', 'ICSE'] },
   class: { type: String, required: true },
   items: [{ type: String }],
   feeAmount: { type: Number, required: true, default: 0 }

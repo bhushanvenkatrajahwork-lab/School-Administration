@@ -86,7 +86,7 @@ const seed = async () => {
     // ----------------------------------------------------
     console.log('Seeding class configurations...');
     const cbseClasses = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10'];
-    const icseClasses = ['Class I', 'Class II', 'Class III', 'Class IV', 'Class V', 'Class VI', 'Class VII', 'Class VIII', 'Class IX', 'Class X'];
+    const icseClasses = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10'];
 
     for (const c of cbseClasses) {
       await models.ClassConfig.create({
@@ -124,7 +124,7 @@ const seed = async () => {
     });
     await models.BookConfig.create({
       schoolType: 'ICSE',
-      class: 'Class X',
+      class: 'Class 10',
       books: [...booksList, 'French Literature'],
       feeAmount: 4800
     });
@@ -135,17 +135,20 @@ const seed = async () => {
     console.log('Seeding uniform configurations...');
     const uniformItems = ['Shirt (Boys/Girls)', 'Pant/Skirt', 'Tie', 'Belt', 'Socks (Pack of 2)', 'Black Leather Shoes', 'Sports T-Shirt (House)', 'Sweater (Woolen)'];
     await models.UniformConfig.create({
+      schoolType: 'CBSE',
       class: 'Class 10',
       items: uniformItems,
       feeAmount: 2800
     });
     await models.UniformConfig.create({
+      schoolType: 'CBSE',
       class: 'Class 9',
       items: uniformItems,
       feeAmount: 2600
     });
     await models.UniformConfig.create({
-      class: 'Class X',
+      schoolType: 'ICSE',
+      class: 'Class 10',
       items: [...uniformItems, 'Blazer (Navy Blue)'],
       feeAmount: 3500
     });

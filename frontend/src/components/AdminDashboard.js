@@ -67,7 +67,7 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
   // Uniform Config states
   const [uniformsConfig, setUniformsConfig] = useState([]);
   const [showAddUniformConfig, setShowAddUniformConfig] = useState(false);
-  const [uniformConfigForm, setUniformConfigForm] = useState({ class: '', items: 'Shirt, Pant, Tie, Belt, Socks', feeAmount: '' });
+  const [uniformConfigForm, setUniformConfigForm] = useState({ schoolType: 'CBSE', class: '', items: 'Shirt, Pant, Tie, Belt, Socks', feeAmount: '' });
 
   // Transport Config states
   const [transportConfigs, setTransportConfigs] = useState([]);
@@ -88,6 +88,26 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
   // Audit Logs state
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
+
+  // Report Filter states
+  const [reportFilterBoard, setReportFilterBoard] = useState('');
+  const [reportFilterClass, setReportFilterClass] = useState('');
+  const [reportFilterSection, setReportFilterSection] = useState('');
+
+  // Filter classes by selected board for report exports
+  const getReportFilteredClasses = () => {
+    if (!reportFilterBoard) return classes;
+    return classes.filter(c => c.schoolType === reportFilterBoard);
+  };
+
+  // Filter sections by selected class for report exports
+  const getReportFilteredSections = () => {
+    if (!reportFilterClass) return [];
+    const configs = classes.filter(c => c.name === reportFilterClass && (!reportFilterBoard || c.schoolType === reportFilterBoard));
+    const allSections = new Set();
+    configs.forEach(c => c.sections.forEach(s => allSections.add(s)));
+    return Array.from(allSections).sort();
+  };
 
   // Filter classes by selected board
   const getDirectoryFilteredClasses = () => {
@@ -254,7 +274,24 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
 
   const handleExportCSV = async (type) => {
     try {
-      await api.download(`/reports/export/csv?type=${type}`, `${type}_clearance_report.csv`);
+      let url = `/reports/export/csv?type=${type}`;
+      let filenameParts = [type];
+      
+      if (reportFilterBoard) {
+        url += `&schoolType=${reportFilterBoard}`;
+        filenameParts.push(reportFilterBoard);
+      }
+      if (reportFilterClass) {
+        url += `&class=${encodeURIComponent(reportFilterClass)}`;
+        filenameParts.push(reportFilterClass.replace(/\s+/g, '_'));
+      }
+      if (reportFilterSection) {
+        url += `&section=${encodeURIComponent(reportFilterSection)}`;
+        filenameParts.push(reportFilterSection);
+      }
+      
+      const filename = `${filenameParts.join('_')}_report.csv`;
+      await api.download(url, filename);
     } catch (err) {
       alert('CSV Export failed: ' + err.message);
     }
@@ -347,10 +384,12 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
     try {
       const parsedItems = uniformConfigForm.items.split(',').map(i => i.trim()).filter(Boolean);
       await api.post('/classes/uniforms', {
+        schoolType: uniformConfigForm.schoolType,
         class: uniformConfigForm.class,
         items: parsedItems,
         feeAmount: Number(uniformConfigForm.feeAmount)
       });
+      setUniformConfigForm({ schoolType: 'CBSE', class: '', items: 'Shirt, Pant, Tie, Belt, Socks', feeAmount: '' });
       setShowAddUniformConfig(false);
       fetchConfigs();
     } catch (err) {
@@ -1336,6 +1375,17 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
             {showAddUniformConfig && (
               <form onSubmit={handleAddUniformConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-3 text-xs">
                 <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">School Board</label>
+                  <select
+                    value={uniformConfigForm.schoolType}
+                    onChange={(e) => setUniformConfigForm(prev => ({ ...prev, schoolType: e.target.value, class: '' }))}
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
+                  >
+                    <option value="CBSE">CBSE</option>
+                    <option value="ICSE">ICSE</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">Class Name</label>
                   <select
                     required
@@ -1344,9 +1394,11 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
                     className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 cursor-pointer text-slate-850"
                   >
                     <option value="">-- Select Class --</option>
-                    {Array.from(new Set(classes.map(c => c.name))).map((className, idx) => (
-                      <option key={idx} value={className}>{className}</option>
-                    ))}
+                    {classes
+                      .filter(c => c.schoolType === uniformConfigForm.schoolType)
+                      .map(c => (
+                        <option key={c._id} value={c.name}>{c.name}</option>
+                      ))}
                   </select>
                 </div>
                 <div>
@@ -1380,7 +1432,7 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
               {uniformsConfig.map(u => (
                 <div key={u._id} className="py-3 text-xs space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-800">{u.class}</span>
+                    <span className="font-bold text-slate-800">{u.schoolType} - {u.class}</span>
                     <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/50 px-2 py-0.5 rounded-lg">₹{u.feeAmount}</span>
                   </div>
                   <p className="text-[10px] text-slate-500 font-medium leading-relaxed">Items: {u.items?.join(', ')}</p>
@@ -1518,6 +1570,56 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
           <div>
             <h3 className="text-sm font-bold text-slate-900">Operational Analytics Exporters</h3>
             <p className="text-[11px] text-slate-400 mt-0.5">Download current databases and collections ledgers in CSV spreadsheets</p>
+          </div>
+
+          {/* Exporter Filters */}
+          <div className="bg-slate-50/50 border border-slate-200/60 p-5 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-4.5 text-xs">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">School Board</label>
+              <select
+                value={reportFilterBoard}
+                onChange={(e) => {
+                  setReportFilterBoard(e.target.value);
+                  setReportFilterClass('');
+                  setReportFilterSection('');
+                }}
+                className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 cursor-pointer text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">All Boards</option>
+                <option value="CBSE">CBSE (Central Board)</option>
+                <option value="ICSE">ICSE (Indian Certificate)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Class Name</label>
+              <select
+                value={reportFilterClass}
+                onChange={(e) => {
+                  setReportFilterClass(e.target.value);
+                  setReportFilterSection('');
+                }}
+                className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 cursor-pointer text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">All Classes</option>
+                {Array.from(new Set(getReportFilteredClasses().map(c => c.name))).map((className, idx) => (
+                  <option key={idx} value={className}>{className}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Section</label>
+              <select
+                value={reportFilterSection}
+                onChange={(e) => setReportFilterSection(e.target.value)}
+                disabled={!reportFilterClass}
+                className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 cursor-pointer text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">All Sections</option>
+                {getReportFilteredSections().map((sec, idx) => (
+                  <option key={idx} value={sec}>{sec}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

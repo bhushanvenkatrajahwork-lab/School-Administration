@@ -164,14 +164,14 @@ router.get('/uniforms', authenticate, async (req, res) => {
 // @desc    Configure uniforms for a class
 // @access  Private (Super Admin Only)
 router.post('/uniforms', authenticate, authorize(['SUPER_ADMIN']), async (req, res) => {
-  const { class: className, items, feeAmount } = req.body;
+  const { schoolType, class: className, items, feeAmount } = req.body;
 
-  if (!className || !items || feeAmount === undefined) {
+  if (!schoolType || !className || !items || feeAmount === undefined) {
     return res.status(400).json({ message: 'Please enter all fields' });
   }
 
   try {
-    let existingConfig = await models.UniformConfig.findOne({ class: className });
+    let existingConfig = await models.UniformConfig.findOne({ schoolType, class: className });
     let result;
     let oldVal = null;
 
@@ -184,6 +184,7 @@ router.post('/uniforms', authenticate, authorize(['SUPER_ADMIN']), async (req, r
       );
     } else {
       result = await models.UniformConfig.create({
+        schoolType,
         class: className,
         items,
         feeAmount: Number(feeAmount)
@@ -194,7 +195,7 @@ router.post('/uniforms', authenticate, authorize(['SUPER_ADMIN']), async (req, r
       req.user.username,
       'UNIFORM_CONFIG_SAVED',
       null,
-      `Saved uniform items list and fee config for ${className}`,
+      `Saved uniform items list and fee config for ${schoolType} - ${className}`,
       oldVal,
       result
     );

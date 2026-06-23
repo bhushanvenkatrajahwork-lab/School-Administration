@@ -59,7 +59,7 @@ router.get('/uniforms', authenticate, async (req, res) => {
 // @access  Private
 router.get('/transportation', authenticate, async (req, res) => {
   try {
-    const students = await models.Student.find({ transportEnrollment: 'Yes', transportType: 'School Bus' });
+    const students = await models.Student.find({ transportEnrollment: 'Yes' });
     const list = students.map(s => {
       const sObj = s.toObject();
       const transport = sObj.transportFee || {};
@@ -274,8 +274,19 @@ router.get('/export/csv', authenticate, async (req, res) => {
     let csvContent = '';
     let filename = 'report.csv';
 
+    const filterQuery = {};
+    if (req.query.schoolType && req.query.schoolType !== 'All' && req.query.schoolType !== '') {
+      filterQuery.schoolType = req.query.schoolType;
+    }
+    if (req.query.class && req.query.class !== 'All' && req.query.class !== '') {
+      filterQuery.class = req.query.class;
+    }
+    if (req.query.section && req.query.section !== 'All' && req.query.section !== '') {
+      filterQuery.section = req.query.section;
+    }
+
     if (type === 'tuition') {
-      const students = await models.Student.find();
+      const students = await models.Student.find(filterQuery);
       filename = 'tuition_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Fee Amount,Discount,Fine,Total,Paid,Balance,Status,Payment Date\n';
       
@@ -286,7 +297,7 @@ router.get('/export/csv', authenticate, async (req, res) => {
         }
       });
     } else if (type === 'books') {
-      const students = await models.Student.find();
+      const students = await models.Student.find(filterQuery);
       filename = 'book_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Fee Amount,Paid,Balance,Status,Books Issued\n';
       
@@ -298,7 +309,7 @@ router.get('/export/csv', authenticate, async (req, res) => {
         }
       });
     } else if (type === 'uniforms') {
-      const students = await models.Student.find();
+      const students = await models.Student.find(filterQuery);
       filename = 'uniform_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Fee Amount,Paid,Balance,Status,Items Issued\n';
       
@@ -310,7 +321,7 @@ router.get('/export/csv', authenticate, async (req, res) => {
         }
       });
     } else if (type === 'transportation') {
-      const students = await models.Student.find({ transportEnrollment: 'Yes', transportType: 'School Bus' });
+      const students = await models.Student.find({ ...filterQuery, transportEnrollment: 'Yes', transportType: 'School Bus' });
       filename = 'transport_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Enrollment,Transport Type,Route,Bus Number,Fee Amount,Paid,Balance,Status,Payment Date\n';
       
@@ -321,7 +332,7 @@ router.get('/export/csv', authenticate, async (req, res) => {
         }
       });
     } else if (type === 'lunch') {
-      const students = await models.Student.find({ lunchEnrollment: 'Lunch at School' });
+      const students = await models.Student.find({ ...filterQuery, lunchEnrollment: 'Lunch at School' });
       filename = 'lunch_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,Enrollment,Period,Fee Amount,Paid,Balance,Status,Payment Date\n';
       
@@ -332,12 +343,12 @@ router.get('/export/csv', authenticate, async (req, res) => {
         }
       });
     } else if (type === 'pending') {
-      // Fetch tuition, books, uniforms, transport, lunch pending
-      const tuitionPending = await models.Student.find({ 'tuitionFee.balanceAmount': { $gt: 0 } });
-      const bookPending = await models.Student.find({ 'bookFee.balanceAmount': { $gt: 0 } });
-      const uniformPending = await models.Student.find({ 'uniformFee.balanceAmount': { $gt: 0 } });
-      const transportPending = await models.Student.find({ 'transportFee.balanceAmount': { $gt: 0 } });
-      const lunchPending = await models.Student.find({ 'lunchFee.balanceAmount': { $gt: 0 } });
+      // Fetch tuition, books, uniforms, transport, lunch pending with filters
+      const tuitionPending = await models.Student.find({ ...filterQuery, 'tuitionFee.balanceAmount': { $gt: 0 } });
+      const bookPending = await models.Student.find({ ...filterQuery, 'bookFee.balanceAmount': { $gt: 0 } });
+      const uniformPending = await models.Student.find({ ...filterQuery, 'uniformFee.balanceAmount': { $gt: 0 } });
+      const transportPending = await models.Student.find({ ...filterQuery, 'transportFee.balanceAmount': { $gt: 0 } });
+      const lunchPending = await models.Student.find({ ...filterQuery, 'lunchFee.balanceAmount': { $gt: 0 } });
       
       filename = 'pending_fee_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class-Section,Fee Type,Total Fee,Amount Paid,Balance Outstanding,Status\n';
@@ -377,7 +388,7 @@ router.get('/export/csv', authenticate, async (req, res) => {
         }
       });
     } else if (type === 'clearance') {
-      const records = await models.Student.find();
+      const records = await models.Student.find(filterQuery);
       filename = 'clearance_report.csv';
       csvContent = 'Student ID,Admission No,Student Name,Class,Section,School Type,Clearance Status,Academic Year\n';
       

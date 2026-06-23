@@ -110,12 +110,18 @@ router.post('/action', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN']),
 // @access  Private
 router.get('/config/:class', authenticate, async (req, res) => {
   try {
+    const { schoolType } = req.query;
+    if (!schoolType) {
+      return res.status(400).json({ message: 'schoolType query parameter is required' });
+    }
     const config = await models.UniformConfig.findOne({
+      schoolType,
       class: req.params.class
     });
     if (!config) {
       // Return a default config if not configured by admin yet
       return res.json({
+        schoolType,
         class: req.params.class,
         items: ['Shirt', 'Pant', 'Tie', 'Belt', 'ID Card', 'House T-Shirt', 'Sweater', 'Socks'],
         feeAmount: 2500
