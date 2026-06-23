@@ -824,7 +824,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
       {/* ========================================== */}
       {activeRequest && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-slide-up">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-slide-up max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 bg-[#0B192C] text-white flex justify-between items-center">
               <div>
                 <h4 className="text-sm font-bold">Uniform &amp; Services Clearance Stepper</h4>
@@ -901,7 +901,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
 
             {/* Step 1: Uniform Checklist & Payment */}
             {currentStep === 1 && (
-              <form onSubmit={handleDistributionSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleDistributionSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
                 
                 {/* Info grid */}
                 <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs">
@@ -1130,7 +1130,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
 
             {/* Step 2: Transportation Clearance */}
             {currentStep === 2 && (
-              <form onSubmit={handleTransportSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleTransportSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
                 {/* Route detail fields */}
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 text-xs space-y-3">
                   <div>
@@ -1280,7 +1280,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
 
             {/* Step 3: Lunch Clearance */}
             {currentStep === 3 && (
-              <form onSubmit={handleLunchSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleLunchSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
                 {/* Meal plan info */}
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 text-xs space-y-3">
                   <div>
@@ -1376,7 +1376,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
 
             {/* Step 4: Complete/Success Screen */}
             {currentStep === 4 && (
-              <div className="p-8 space-y-6 text-center">
+              <div className="p-8 space-y-6 text-center overflow-y-auto flex-1">
                 <div className="h-16 w-16 bg-emerald-50 text-emerald-500 border border-emerald-250 rounded-full flex items-center justify-center mx-auto shadow-sm">
                   <Check className="h-10 w-10" />
                 </div>
