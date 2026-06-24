@@ -130,6 +130,7 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
     } else if (role === 'BOOK_DEPT') {
       return [
         { id: 'book-overview', label: 'Library Dashboard', icon: LayoutDashboard },
+        { id: 'inventory', label: 'Inventory Desk', icon: Boxes },
         { id: 'book-queue', label: 'Clearance Queue', icon: BookOpen },
         { id: 'history', label: 'Clearance History', icon: History },
       ];

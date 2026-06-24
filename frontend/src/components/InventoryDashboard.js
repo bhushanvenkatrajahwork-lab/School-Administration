@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { 
   Boxes, 
   Plus, 
@@ -23,9 +24,10 @@ import {
 } from 'lucide-react';
 
 export default function InventoryDashboard() {
+  const { user } = useAuth();
   // Navigation inside inventory portal
   const [subTab, setSubTab] = useState('overview'); // overview, catalog, suppliers, purchases, issues
-  
+
   // Data States
   const [stats, setStats] = useState({
     totalStock: 0,
@@ -54,6 +56,7 @@ export default function InventoryDashboard() {
   // Search & Filters
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogTypeFilter, setCatalogTypeFilter] = useState('');
+  const [catalogAlertFilter, setCatalogAlertFilter] = useState('');
   
   // Form / Modal States
   const [showItemModal, setShowItemModal] = useState(false);
@@ -89,6 +92,60 @@ export default function InventoryDashboard() {
     quantity: 1,
     cost: 0
   });
+
+  const getFilteredStats = () => {
+    let filteredItems = items;
+    let filteredPurchases = purchases;
+    let filteredIssues = issues;
+
+    if (user?.role === 'UNIFORM_DEPT') {
+      filteredItems = items.filter(i => i.itemType === 'Uniform');
+      filteredPurchases = purchases.filter(p => p.itemType === 'Uniform');
+      filteredIssues = issues.filter(is => is.itemType === 'Uniform');
+    } else if (user?.role === 'BOOK_DEPT') {
+      filteredItems = items.filter(i => i.itemType === 'Book');
+      filteredPurchases = purchases.filter(p => p.itemType === 'Book');
+      filteredIssues = issues.filter(is => is.itemType === 'Book');
+    }
+
+    let totalStock = 0;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+    let totalValue = 0;
+
+    filteredItems.forEach(item => {
+      const qty = Number(item.quantity) || 0;
+      totalStock += qty;
+      totalValue += qty * (Number(item.unitCost) || 0);
+
+      if (qty === 0) {
+        outOfStockCount++;
+      } else if (qty <= (Number(item.reorderThreshold) || 10)) {
+        lowStockCount++;
+      }
+    });
+
+    let recentlyIssued = 0;
+    filteredIssues.forEach(is => {
+      recentlyIssued++;
+    });
+
+    let recentlyPurchased = 0;
+    filteredPurchases.forEach(p => {
+      recentlyPurchased += Number(p.quantity) || 0;
+    });
+
+    return {
+      totalStock,
+      lowStockCount,
+      outOfStockCount,
+      recentlyIssued,
+      recentlyPurchased,
+      totalValue
+    };
+  };
+
+  const computedStats = getFilteredStats();
 
   // Load baseline configurations
   useEffect(() => {
@@ -256,7 +313,7 @@ export default function InventoryDashboard() {
 
   const resetItemForm = () => {
     setNewItem({
-      itemType: 'Uniform',
+      itemType: user?.role === 'BOOK_DEPT' ? 'Book' : 'Uniform',
       name: '',
       class: '',
       size: 'N/A',
@@ -280,7 +337,7 @@ export default function InventoryDashboard() {
       supplierId: '',
       invoiceNumber: '',
       purchaseDate: '',
-      itemType: 'Uniform',
+      itemType: user?.role === 'BOOK_DEPT' ? 'Book' : 'Uniform',
       itemName: '',
       size: 'N/A',
       quantity: 1,
@@ -348,45 +405,63 @@ export default function InventoryDashboard() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5">
           {/* Total Value Card */}
-          <div className="bg-gradient-to-br from-[#0B1528] to-[#050B14] p-4 rounded-2xl border border-slate-800 text-white relative overflow-hidden group hover:shadow-lg transition-all">
+          <div 
+            onClick={() => { setSubTab('catalog'); setCatalogAlertFilter(''); setCatalogSearch(''); setCatalogTypeFilter(''); }}
+            className="bg-gradient-to-br from-[#0B1528] to-[#050B14] p-4 rounded-2xl border border-slate-800 text-white relative overflow-hidden group hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+          >
             <IndianRupee className="absolute right-2.5 top-2.5 h-10 w-10 text-slate-700/25 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Stock Valuation</span>
-            <h4 className="text-lg font-black mt-1">₹{(stats.totalValue || 0).toLocaleString('en-IN')}</h4>
+            <h4 className="text-lg font-black mt-1">₹{(computedStats.totalValue || 0).toLocaleString('en-IN')}</h4>
           </div>
 
           {/* Total Stock Available */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 relative overflow-hidden group hover:shadow-sm transition-all">
+          <div 
+            onClick={() => { setSubTab('catalog'); setCatalogAlertFilter(''); setCatalogSearch(''); setCatalogTypeFilter(''); }}
+            className="bg-white p-4 rounded-2xl border border-slate-200 relative overflow-hidden group hover:shadow-sm transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+          >
             <Boxes className="absolute right-2.5 top-2.5 h-10 w-10 text-slate-100 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Stock</span>
-            <h4 className="text-lg font-black text-slate-800 mt-1">{stats.totalStock || 0} <span className="text-[10px] text-slate-500 font-semibold">pcs</span></h4>
+            <h4 className="text-lg font-black text-slate-800 mt-1">{computedStats.totalStock || 0} <span className="text-[10px] text-slate-500 font-semibold">pcs</span></h4>
           </div>
 
           {/* Low Stock Alerts */}
-          <div className={`p-4 rounded-2xl border relative overflow-hidden group hover:shadow-sm transition-all ${stats.lowStockCount > 0 ? 'bg-amber-50/50 border-amber-250' : 'bg-white border-slate-200'}`}>
-            <AlertTriangle className={`absolute right-2.5 top-2.5 h-10 w-10 group-hover:scale-110 transition-transform ${stats.lowStockCount > 0 ? 'text-amber-300/40' : 'text-slate-100'}`} />
+          <div 
+            onClick={() => { setSubTab('catalog'); setCatalogAlertFilter('low'); setCatalogSearch(''); setCatalogTypeFilter(''); }}
+            className={`p-4 rounded-2xl border relative overflow-hidden group hover:shadow-sm transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] ${computedStats.lowStockCount > 0 ? 'bg-amber-50/50 border-amber-250' : 'bg-white border-slate-200'}`}
+          >
+            <AlertTriangle className={`absolute right-2.5 top-2.5 h-10 w-10 group-hover:scale-110 transition-transform ${computedStats.lowStockCount > 0 ? 'text-amber-300/40' : 'text-slate-100'}`} />
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Low Stock items</span>
-            <h4 className={`text-lg font-black mt-1 ${stats.lowStockCount > 0 ? 'text-amber-700' : 'text-slate-800'}`}>{stats.lowStockCount || 0}</h4>
+            <h4 className={`text-lg font-black mt-1 ${computedStats.lowStockCount > 0 ? 'text-amber-700' : 'text-slate-800'}`}>{computedStats.lowStockCount || 0}</h4>
           </div>
 
           {/* Out of Stock Items */}
-          <div className={`p-4 rounded-2xl border relative overflow-hidden group hover:shadow-sm transition-all ${stats.outOfStockCount > 0 ? 'bg-rose-50/50 border-rose-250 animate-pulse' : 'bg-white border-slate-200'}`}>
-            <X className={`absolute right-2.5 top-2.5 h-10 w-10 group-hover:scale-110 transition-transform ${stats.outOfStockCount > 0 ? 'text-rose-300/45' : 'text-slate-100'}`} />
+          <div 
+            onClick={() => { setSubTab('catalog'); setCatalogAlertFilter('out'); setCatalogSearch(''); setCatalogTypeFilter(''); }}
+            className={`p-4 rounded-2xl border relative overflow-hidden group hover:shadow-sm transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] ${computedStats.outOfStockCount > 0 ? 'bg-rose-50/50 border-rose-250 animate-pulse' : 'bg-white border-slate-200'}`}
+          >
+            <X className={`absolute right-2.5 top-2.5 h-10 w-10 group-hover:scale-110 transition-transform ${computedStats.outOfStockCount > 0 ? 'text-rose-300/45' : 'text-slate-100'}`} />
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Out of Stock</span>
-            <h4 className={`text-lg font-black mt-1 ${stats.outOfStockCount > 0 ? 'text-rose-600' : 'text-slate-800'}`}>{stats.outOfStockCount || 0}</h4>
+            <h4 className={`text-lg font-black mt-1 ${computedStats.outOfStockCount > 0 ? 'text-rose-600' : 'text-slate-800'}`}>{computedStats.outOfStockCount || 0}</h4>
           </div>
 
           {/* Recently Issued count */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 relative overflow-hidden group hover:shadow-sm transition-all">
+          <div 
+            onClick={() => setSubTab('issues')}
+            className="bg-white p-4 rounded-2xl border border-slate-200 relative overflow-hidden group hover:shadow-sm transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+          >
             <Users className="absolute right-2.5 top-2.5 h-10 w-10 text-slate-100 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Issued Stock</span>
-            <h4 className="text-lg font-black text-slate-800 mt-1">{stats.recentlyIssued || 0} <span className="text-[10px] text-slate-500 font-semibold">items</span></h4>
+            <h4 className="text-lg font-black text-slate-800 mt-1">{computedStats.recentlyIssued || 0} <span className="text-[10px] text-slate-500 font-semibold">items</span></h4>
           </div>
 
           {/* Recently Purchased count */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 relative overflow-hidden group hover:shadow-sm transition-all">
+          <div 
+            onClick={() => setSubTab('purchases')}
+            className="bg-white p-4 rounded-2xl border border-slate-200 relative overflow-hidden group hover:shadow-sm transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+          >
             <TrendingUp className="absolute right-2.5 top-2.5 h-10 w-10 text-slate-100 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Purchased Stock</span>
-            <h4 className="text-lg font-black text-slate-800 mt-1">{stats.recentlyPurchased || 0} <span className="text-[10px] text-slate-500 font-semibold">pcs</span></h4>
+            <h4 className="text-lg font-black text-slate-800 mt-1">{computedStats.recentlyPurchased || 0} <span className="text-[10px] text-slate-500 font-semibold">pcs</span></h4>
           </div>
         </div>
       )}
@@ -419,7 +494,7 @@ export default function InventoryDashboard() {
                 <p className="text-center text-slate-450 py-6 text-xs font-semibold">All configured stock items have sufficient quantities for remaining student clearances.</p>
               ) : (
                 <div className="space-y-2">
-                  {forecasts.slice(0, 5).map((f, index) => {
+                  {forecasts.filter(f => user?.role === 'SUPER_ADMIN' ? true : f.itemType === (user?.role === 'UNIFORM_DEPT' ? 'Uniform' : 'Book')).slice(0, 5).map((f, index) => {
                     const isShortage = f.shortage > 0;
                     const isOut = f.quantity === 0;
                     return (
@@ -542,8 +617,19 @@ export default function InventoryDashboard() {
           </div>
 
           {/* Filtering Toolbar */}
-          <div className="flex flex-col md:flex-row gap-3 bg-slate-50 p-3.5 border border-slate-200/80 rounded-xl text-xs">
-            <div className="flex-1 relative">
+          <div className="flex flex-col md:flex-row gap-3 bg-slate-50 p-3.5 border border-slate-200/80 rounded-xl text-xs items-center w-full">
+            {catalogAlertFilter && (
+              <div className="flex items-center space-x-2 bg-indigo-50 border border-indigo-200 text-indigo-800 px-3 py-1.5 rounded-xl font-bold shrink-0">
+                <span>Filtering: {catalogAlertFilter === 'low' ? 'Low Stock Only' : 'Out of Stock Only'}</span>
+                <button 
+                  onClick={() => setCatalogAlertFilter('')}
+                  className="hover:text-indigo-950 font-black cursor-pointer text-sm leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            <div className="flex-1 relative w-full">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
@@ -604,7 +690,19 @@ export default function InventoryDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {items.map(item => {
+                  {items.filter(item => {
+                    if (user?.role === 'UNIFORM_DEPT' && item.itemType !== 'Uniform') return false;
+                    if (user?.role === 'BOOK_DEPT' && item.itemType !== 'Book') return false;
+                    const qty = Number(item.quantity) || 0;
+                    const threshold = Number(item.reorderThreshold) || 10;
+                    if (catalogAlertFilter === 'low') {
+                      return qty <= threshold && qty > 0;
+                    }
+                    if (catalogAlertFilter === 'out') {
+                      return qty === 0;
+                    }
+                    return true;
+                  }).map(item => {
                     const qty = Number(item.quantity) || 0;
                     const threshold = Number(item.reorderThreshold) || 10;
                     const isLow = qty <= threshold;
@@ -741,7 +839,11 @@ export default function InventoryDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {purchases.map(p => (
+                  {purchases.filter(p => {
+                    if (user?.role === 'UNIFORM_DEPT' && p.itemType !== 'Uniform') return false;
+                    if (user?.role === 'BOOK_DEPT' && p.itemType !== 'Book') return false;
+                    return true;
+                  }).map(p => (
                     <tr key={p._id} className="hover:bg-slate-50/40">
                       <td className="py-3 px-4 font-mono font-bold text-indigo-600">{p.invoiceNumber}</td>
                       <td className="py-3 px-4 font-bold text-slate-800">{p.supplier?.name || 'Unknown Supplier'}</td>
@@ -801,7 +903,11 @@ export default function InventoryDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {issues.map((issue, idx) => (
+                  {issues.filter(is => {
+                    if (user?.role === 'UNIFORM_DEPT' && is.itemType !== 'Uniform') return false;
+                    if (user?.role === 'BOOK_DEPT' && is.itemType !== 'Book') return false;
+                    return true;
+                  }).map((issue, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/40">
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">{issue.studentId}</td>
                       <td className="py-3 px-4 font-bold text-slate-805">{issue.studentName}</td>
@@ -851,25 +957,37 @@ export default function InventoryDashboard() {
             </h3>
 
             <form onSubmit={handleCreateItem} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-550 mb-1 uppercase tracking-wider">Item Type</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewItem({ ...newItem, itemType: 'Uniform' })}
-                    className={`py-2 text-center font-bold rounded-xl border transition-all cursor-pointer ${newItem.itemType === 'Uniform' ? 'bg-rose-50 border-rose-300 text-rose-700' : 'bg-white border-slate-250 hover:bg-slate-50'}`}
-                  >
-                    Uniform Item
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewItem({ ...newItem, itemType: 'Book' })}
-                    className={`py-2 text-center font-bold rounded-xl border transition-all cursor-pointer ${newItem.itemType === 'Book' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-250 hover:bg-slate-50'}`}
-                  >
-                    Course Textbook
-                  </button>
+              {user?.role === 'SUPER_ADMIN' ? (
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-550 mb-1 uppercase tracking-wider">Item Type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewItem({ ...newItem, itemType: 'Uniform' })}
+                      className={`py-2 text-center font-bold rounded-xl border transition-all cursor-pointer ${newItem.itemType === 'Uniform' ? 'bg-rose-50 border-rose-300 text-rose-700' : 'bg-white border-slate-250 hover:bg-slate-50'}`}
+                    >
+                      Uniform Item
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewItem({ ...newItem, itemType: 'Book' })}
+                      className={`py-2 text-center font-bold rounded-xl border transition-all cursor-pointer ${newItem.itemType === 'Book' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-250 hover:bg-slate-50'}`}
+                    >
+                      Course Textbook
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-550 mb-1 uppercase tracking-wider">Item Type</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={newItem.itemType === 'Uniform' ? 'Uniform Item' : 'Course Textbook'}
+                    className="w-full border border-slate-200 bg-slate-100 rounded-xl px-3 py-2 text-slate-500 font-bold focus:outline-none"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-550 mb-1 uppercase tracking-wider">Item Name</label>
@@ -1102,17 +1220,29 @@ export default function InventoryDashboard() {
                     className="w-full border border-slate-250 bg-white rounded-xl px-3 py-2 text-slate-800 font-medium focus:outline-none focus:border-indigo-600"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-550 mb-1 uppercase tracking-wider">Item Type</label>
-                  <select
-                    value={newPurchase.itemType}
-                    onChange={(e) => setNewPurchase({ ...newPurchase, itemType: e.target.value })}
-                    className="w-full border border-slate-250 bg-white rounded-xl px-3 py-2 text-slate-805 font-bold focus:outline-none focus:border-indigo-600 cursor-pointer"
-                  >
-                    <option value="Uniform">Uniform</option>
-                    <option value="Book">Textbook</option>
-                  </select>
-                </div>
+                {user?.role === 'SUPER_ADMIN' ? (
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-550 mb-1 uppercase tracking-wider">Item Type</label>
+                    <select
+                      value={newPurchase.itemType}
+                      onChange={(e) => setNewPurchase({ ...newPurchase, itemType: e.target.value })}
+                      className="w-full border border-slate-250 bg-white rounded-xl px-3 py-2 text-slate-805 font-bold focus:outline-none focus:border-indigo-600 cursor-pointer"
+                    >
+                      <option value="Uniform">Uniform</option>
+                      <option value="Book">Textbook</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-550 mb-1 uppercase tracking-wider">Item Type</label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={newPurchase.itemType === 'Uniform' ? 'Uniform' : 'Textbook'}
+                      className="w-full border border-slate-200 bg-slate-100 rounded-xl px-3 py-2 text-slate-500 font-bold focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
