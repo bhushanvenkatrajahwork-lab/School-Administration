@@ -19,10 +19,16 @@ export const api = {
         headers: getHeaders(),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Something went wrong');
+      if (!response.ok) {
+        const error = new Error(data.message || 'Something went wrong');
+        error.status = response.status;
+        throw error;
+      }
       return data;
     } catch (error) {
-      console.error(`API GET error on ${endpoint}:`, error);
+      if (error.status !== 401 && error.status !== 403) {
+        console.error(`API GET error on ${endpoint}:`, error);
+      }
       throw error;
     }
   },
@@ -35,10 +41,16 @@ export const api = {
         body: JSON.stringify(body),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Something went wrong');
+      if (!response.ok) {
+        const error = new Error(data.message || 'Something went wrong');
+        error.status = response.status;
+        throw error;
+      }
       return data;
     } catch (error) {
-      console.error(`API POST error on ${endpoint}:`, error);
+      if (error.status !== 401 && error.status !== 403) {
+        console.error(`API POST error on ${endpoint}:`, error);
+      }
       throw error;
     }
   },
@@ -51,10 +63,16 @@ export const api = {
         body: JSON.stringify(body),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Something went wrong');
+      if (!response.ok) {
+        const error = new Error(data.message || 'Something went wrong');
+        error.status = response.status;
+        throw error;
+      }
       return data;
     } catch (error) {
-      console.error(`API PUT error on ${endpoint}:`, error);
+      if (error.status !== 401 && error.status !== 403) {
+        console.error(`API PUT error on ${endpoint}:`, error);
+      }
       throw error;
     }
   },
@@ -66,10 +84,16 @@ export const api = {
         headers: getHeaders(),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Something went wrong');
+      if (!response.ok) {
+        const error = new Error(data.message || 'Something went wrong');
+        error.status = response.status;
+        throw error;
+      }
       return data;
     } catch (error) {
-      console.error(`API DELETE error on ${endpoint}:`, error);
+      if (error.status !== 401 && error.status !== 403) {
+        console.error(`API DELETE error on ${endpoint}:`, error);
+      }
       throw error;
     }
   },
@@ -90,7 +114,9 @@ export const api = {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Download failed');
+        const error = new Error(data.message || 'Download failed');
+        error.status = response.status;
+        throw error;
       }
 
       const blob = await response.blob();
@@ -103,7 +129,9 @@ export const api = {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error(`Download error on ${endpoint}:`, error);
+      if (error.status !== 401 && error.status !== 403) {
+        console.error(`Download error on ${endpoint}:`, error);
+      }
       throw error;
     }
   }

@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
           // Fetch notifications
           fetchNotifications();
         } catch (error) {
-          console.error('Session verification failed, logging out...');
+          console.log('Session verification failed, logging out...');
           logout();
         }
       }
@@ -77,7 +77,9 @@ export const AuthProvider = ({ children }) => {
       const list = await api.get('/notifications');
       setNotifications(list);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      if (error.status !== 401 && error.status !== 403) {
+        console.error('Failed to fetch notifications:', error);
+      }
     }
   };
 
@@ -95,7 +97,9 @@ export const AuthProvider = ({ children }) => {
         })
       );
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      if (error.status !== 401 && error.status !== 403) {
+        console.error('Failed to mark notification as read:', error);
+      }
     }
   };
 

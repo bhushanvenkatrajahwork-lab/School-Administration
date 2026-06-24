@@ -5,6 +5,38 @@ import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Shirt, Users, CheckCircle, Clock, Check, X, AlertCircle, Loader2, User, Mail, Shield, ArrowRight, Search, FileDown, Bus, Utensils } from 'lucide-react';
 
+const getItemSizesAndDefault = (itemName) => {
+  const name = itemName.toLowerCase();
+  if (name.includes('shoe')) {
+    return {
+      sizes: ['Kids 11', 'Kids 12', 'Kids 13', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'N/A'],
+      defaultSize: '6'
+    };
+  }
+  if (name.includes('socks') || name.includes('sock')) {
+    return {
+      sizes: ['Kids', 'Small', 'Medium', 'Large', 'N/A'],
+      defaultSize: 'Medium'
+    };
+  }
+  if (name.includes('belt')) {
+    return {
+      sizes: ['24', '26', '28', '30', '32', '34', '36', '38', '40', 'N/A'],
+      defaultSize: '30'
+    };
+  }
+  if (name.includes('tie')) {
+    return {
+      sizes: ['Small', 'Medium', 'Large', 'N/A'],
+      defaultSize: 'Medium'
+    };
+  }
+  return {
+    sizes: ['28', '30', '32', '34', '36', 'N/A'],
+    defaultSize: '32'
+  };
+};
+
 export default function UniformDashboard({ activeTab, setActiveTab }) {
   const { user } = useAuth();
   const isSubmittingRef = useRef(false);
@@ -257,7 +289,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
       // Initialize selected sizes map
       const initialSizes = {};
       (config.items || []).forEach(item => {
-        initialSizes[item] = '32';
+        initialSizes[item] = getItemSizesAndDefault(item).defaultSize;
       });
       setSelectedSizes(initialSizes);
 
@@ -313,7 +345,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
     try {
       const formattedItems = selectedItems.map(item => ({
         name: item,
-        size: selectedSizes[item] || '32'
+        size: selectedSizes[item] || getItemSizesAndDefault(item).defaultSize
       }));
 
       const res = await api.post('/fees/uniforms/distribute', {
@@ -967,7 +999,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
                             
                             {isChecked && (
                               <select
-                                value={selectedSizes[item] || '32'}
+                                value={selectedSizes[item] || getItemSizesAndDefault(item).defaultSize}
                                 onClick={(e) => e.stopPropagation()}
                                 onChange={(e) => {
                                   e.stopPropagation();
@@ -978,7 +1010,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
                                 }}
                                 className="ml-2 border border-slate-250 bg-white text-slate-705 font-bold px-1.5 py-0.5 rounded text-[10px] focus:outline-none focus:border-rose-600 cursor-pointer"
                               >
-                                {['28', '30', '32', '34', '36', 'N/A'].map(sz => (
+                                {getItemSizesAndDefault(item).sizes.map(sz => (
                                   <option key={sz} value={sz}>{sz}</option>
                                 ))}
                               </select>

@@ -217,18 +217,66 @@ const seed = async () => {
 
     console.log('Suppliers seeded.');
 
-    // Uniform Inventory (size-wise)
-    const sizes = ['28', '30', '32', '34', '36'];
-    const uniformNames = ['Shirt (Boys/Girls)', 'Pant/Skirt', 'Sweater (Woolen)', 'Black Leather Shoes'];
+    // Uniform Inventory (size-wise with realistic sizes)
     const classesList = ['Class 9', 'Class 10'];
+    const itemsWithSize = [
+      {
+        name: 'Shirt (Boys/Girls)',
+        sizes: ['28', '30', '32', '34', '36'],
+        unitCost: 220
+      },
+      {
+        name: 'Pant/Skirt',
+        sizes: ['28', '30', '32', '34', '36'],
+        unitCost: 350
+      },
+      {
+        name: 'Sweater (Woolen)',
+        sizes: ['28', '30', '32', '34', '36'],
+        unitCost: 600
+      },
+      {
+        name: 'Black Leather Shoes',
+        sizes: ['Kids 11', 'Kids 12', 'Kids 13', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+        unitCost: 400
+      },
+      {
+        name: 'Tie',
+        sizes: ['Small', 'Medium', 'Large'],
+        unitCost: 80
+      },
+      {
+        name: 'Belt',
+        sizes: ['24', '26', '28', '30', '32', '34', '36', '38', '40'],
+        unitCost: 120
+      },
+      {
+        name: 'Socks (Pack of 2)',
+        sizes: ['Kids', 'Small', 'Medium', 'Large'],
+        unitCost: 70
+      },
+      {
+        name: 'Sports T-Shirt (House)',
+        sizes: ['28', '30', '32', '34', '36'],
+        unitCost: 180
+      },
+      {
+        name: 'Blazer (Navy Blue)',
+        sizes: ['28', '30', '32', '34', '36'],
+        unitCost: 1200
+      }
+    ];
 
     // Seed size-wise uniforms for CBSE & ICSE
-    for (const uName of uniformNames) {
+    for (const itemConf of itemsWithSize) {
       for (const cls of classesList) {
-        for (const size of sizes) {
-          // Low stock simulation for some items to show low stock alerts
-          const isLowStock = (size === '34' && uName === 'Shirt (Boys/Girls)' && cls === 'Class 10');
-          const isOutOfStock = (size === '30' && uName === 'Sweater (Woolen)' && cls === 'Class 10');
+        for (const size of itemConf.sizes) {
+          // Low stock / out of stock simulations
+          const isLowStock = (
+            (size === '34' && itemConf.name === 'Shirt (Boys/Girls)' && cls === 'Class 10') ||
+            (size === 'Medium' && itemConf.name === 'Tie' && cls === 'Class 10')
+          );
+          const isOutOfStock = (size === '30' && itemConf.name === 'Sweater (Woolen)' && cls === 'Class 10');
           
           let qty = 45;
           if (isLowStock) qty = 4; // Below threshold of 10
@@ -236,29 +284,15 @@ const seed = async () => {
 
           await models.Inventory.create({
             itemType: 'Uniform',
-            name: uName,
+            name: itemConf.name,
             class: cls,
             size: size,
             quantity: qty,
             reorderThreshold: 10,
-            unitCost: uName.includes('Shirt') ? 220 : uName.includes('Pant') ? 350 : uName.includes('Sweater') ? 600 : 400
+            unitCost: itemConf.itemConf || itemConf.unitCost
           });
         }
       }
-    }
-
-    // Seed non-sized uniforms (like Tie, Belt, Socks) with general stock
-    const staticUniforms = ['Tie', 'Belt', 'Socks (Pack of 2)'];
-    for (const uName of staticUniforms) {
-      await models.Inventory.create({
-        itemType: 'Uniform',
-        name: uName,
-        class: 'Class 10',
-        size: 'N/A',
-        quantity: uName === 'Tie' ? 5 : 85, // Tie is low stock
-        reorderThreshold: 10,
-        unitCost: uName === 'Tie' ? 80 : uName === 'Belt' ? 120 : 70
-      });
     }
 
     // Book Inventory (size N/A)
@@ -302,8 +336,344 @@ const seed = async () => {
 
     console.log('Purchase history seeded.');
 
+    // ----------------------------------------------------
+    // 9. SEED STUDENTS AND WORKFLOWS
+    // ----------------------------------------------------
+    console.log('Seeding student profiles and clearance requests...');
+    const studentData = [
+      {
+        studentId: 'STU20260001',
+        admissionNumber: 'ADM2026901',
+        name: 'Arjun Sharma',
+        gender: 'Male',
+        dob: '2011-05-14',
+        schoolType: 'CBSE',
+        class: 'Class 10',
+        section: 'A',
+        rollNumber: '101',
+        fatherName: 'Rajesh Sharma',
+        motherName: 'Sunita Sharma',
+        parentMobile: '9876543210',
+        email: 'arjun.sharma@school.com',
+        address: 'Flat 402, Green Glen Layout, Bangalore',
+        academicYear: '2026-2027',
+        clearanceStatus: 'TUITION_PENDING',
+        tuitionFee: { amount: 15000, paid: 0, status: 'Pending' }
+      },
+      {
+        studentId: 'STU20260002',
+        admissionNumber: 'ADM2026902',
+        name: 'Priya Patel',
+        gender: 'Female',
+        dob: '2011-08-22',
+        schoolType: 'CBSE',
+        class: 'Class 10',
+        section: 'A',
+        rollNumber: '102',
+        fatherName: 'Vikas Patel',
+        motherName: 'Nisha Patel',
+        parentMobile: '9876543211',
+        email: 'priya.patel@school.com',
+        address: 'No 15, HSR Layout, Sector 3, Bangalore',
+        academicYear: '2026-2027',
+        clearanceStatus: 'BOOKS_PENDING',
+        tuitionFee: { amount: 15000, paid: 15000, status: 'Paid' }
+      },
+      {
+        studentId: 'STU20260003',
+        admissionNumber: 'ADM2026903',
+        name: 'Rohan Deshmukh',
+        gender: 'Male',
+        dob: '2011-03-09',
+        schoolType: 'ICSE',
+        class: 'Class 10',
+        section: 'A',
+        rollNumber: '103',
+        fatherName: 'Anand Deshmukh',
+        motherName: 'Preeti Deshmukh',
+        parentMobile: '9876543212',
+        email: 'rohan.deshmukh@school.com',
+        address: 'No 89, Koramangala 4th Block, Bangalore',
+        academicYear: '2026-2027',
+        clearanceStatus: 'UNIFORM_PENDING',
+        tuitionFee: { amount: 18000, paid: 18000, status: 'Paid' },
+        bookFee: { amount: 4800, paid: 4800, status: 'Paid', books: ['English Reader', 'Mathematics', 'General Science', 'Social Science', 'Second Language', 'Computer Science', 'French Literature'] }
+      },
+      {
+        studentId: 'STU20260004',
+        admissionNumber: 'ADM2026904',
+        name: 'Ananya Rao',
+        gender: 'Female',
+        dob: '2011-12-01',
+        schoolType: 'CBSE',
+        class: 'Class 9',
+        section: 'B',
+        rollNumber: '104',
+        fatherName: 'Sanjay Rao',
+        motherName: 'Kavitha Rao',
+        parentMobile: '9876543213',
+        email: 'ananya.rao@school.com',
+        address: 'Apartment B-11, Prestige Lakeside, Bangalore',
+        academicYear: '2026-2027',
+        clearanceStatus: 'COMPLETED',
+        tuitionFee: { amount: 12000, paid: 12000, status: 'Paid' },
+        bookFee: { amount: 3800, paid: 3800, status: 'Paid', books: ['English Reader', 'Mathematics', 'General Science', 'Social Science', 'Hindi Grammar', 'Sanskrit', 'Computer Science'] },
+        uniformFee: { amount: 2600, paid: 2600, status: 'Paid', items: ['Shirt (Boys/Girls)', 'Pant/Skirt', 'Tie', 'Belt', 'Socks (Pack of 2)', 'Black Leather Shoes', 'Sports T-Shirt (House)', 'Sweater (Woolen)'] }
+      }
+    ];
+
+    for (const data of studentData) {
+      const { tuitionFee, bookFee, uniformFee, ...studentFlds } = data;
+      
+      const tuitionFeeNested = {
+        feeAmount: tuitionFee.amount,
+        discount: 0,
+        fine: 0,
+        totalAmount: tuitionFee.amount,
+        amountPaid: tuitionFee.paid,
+        balanceAmount: tuitionFee.amount - tuitionFee.paid,
+        status: tuitionFee.status,
+        paymentDate: tuitionFee.status === 'Paid' ? new Date() : null,
+        paymentMethod: tuitionFee.status === 'Paid' ? 'UPI' : null,
+        transactionRef: tuitionFee.status === 'Paid' ? 'TXN123456789' : '',
+        updatedBy: seededUsers.TUITION_DEPT._id
+      };
+
+      const bookFeeNested = bookFee ? {
+        feeAmount: bookFee.amount,
+        amountPaid: bookFee.paid,
+        balanceAmount: bookFee.amount - bookFee.paid,
+        status: bookFee.status,
+        issuedBooks: bookFee.books,
+        paymentMethod: 'Cash',
+        updatedBy: seededUsers.BOOK_DEPT._id
+      } : {
+        feeAmount: 0,
+        amountPaid: 0,
+        balanceAmount: 0,
+        status: 'Pending',
+        issuedBooks: []
+      };
+
+      const uniformFeeNested = uniformFee ? {
+        feeAmount: uniformFee.amount,
+        amountPaid: uniformFee.paid,
+        balanceAmount: uniformFee.amount - uniformFee.paid,
+        status: uniformFee.status,
+        issuedItems: uniformFee.items,
+        paymentMethod: 'Card',
+        updatedBy: seededUsers.UNIFORM_DEPT._id
+      } : {
+        feeAmount: 0,
+        amountPaid: 0,
+        balanceAmount: 0,
+        status: 'Pending',
+        issuedItems: []
+      };
+
+      const transportFeeNested = {
+        feeAmount: 0,
+        amountPaid: 0,
+        balanceAmount: 0,
+        status: 'Not Applicable'
+      };
+
+      const lunchFeeNested = {
+        feeAmount: 0,
+        amountPaid: 0,
+        balanceAmount: 0,
+        status: 'Not Applicable'
+      };
+
+      // Save Student
+      const student = await models.Student.create({
+        ...studentFlds,
+        tuitionFee: tuitionFeeNested,
+        bookFee: bookFeeNested,
+        uniformFee: uniformFeeNested,
+        transportFee: transportFeeNested,
+        lunchFee: lunchFeeNested
+      });
+
+      // 1. Create Tuition Fee record
+      await models.TuitionFee.create({
+        student: student._id,
+        feeAmount: tuitionFee.amount,
+        discount: 0,
+        fine: 0,
+        totalAmount: tuitionFee.amount,
+        amountPaid: tuitionFee.paid,
+        balanceAmount: tuitionFee.amount - tuitionFee.paid,
+        status: tuitionFee.status,
+        paymentDate: tuitionFee.status === 'Paid' ? new Date() : null,
+        paymentMethod: tuitionFee.status === 'Paid' ? 'UPI' : null,
+        transactionRef: tuitionFee.status === 'Paid' ? 'TXN123456789' : '',
+        updatedBy: seededUsers.TUITION_DEPT._id
+      });
+
+      // Seeding dependent workflows & payment ledgers
+      if (tuitionFee.status === 'Paid') {
+        // Create Tuition Ledger Payment entry
+        await models.Payment.create({
+          receiptNumber: `REC${new Date().getFullYear()}00010${student.rollNumber}`,
+          student: student._id,
+          feeType: 'Tuition',
+          amount: tuitionFee.amount,
+          paymentDate: new Date(Date.now() - 3600000 * 24 * 3), // 3 days ago
+          paymentMethod: 'UPI',
+          transactionRef: 'TXN123456789',
+          staffName: seededUsers.TUITION_DEPT.name
+        });
+
+        // Audit Log Tuition Paid
+        await models.AuditLog.create({
+          user: 'tuition',
+          action: 'TUITION_PAYMENT_COLLECTED',
+          student: student._id,
+          details: `Collected tuition payment of ₹${tuitionFee.amount} for ${student.name}. Status: Paid`
+        });
+
+        // If Books are not cleared yet, create the Book department request
+        if (studentFlds.clearanceStatus === 'BOOKS_PENDING') {
+          await models.RequestQueue.create({
+            student: student._id,
+            department: 'BOOK_DEPT',
+            status: 'PENDING',
+            remarks: 'Tuition cleared. Routed automatically.'
+          });
+        }
+      }
+
+      // 2. Book Clearance Seeding
+      if (bookFee) {
+        // Create Book Fee record
+        await models.BookFee.create({
+          student: student._id,
+          feeAmount: bookFee.amount,
+          amountPaid: bookFee.paid,
+          balanceAmount: bookFee.amount - bookFee.paid,
+          status: bookFee.status,
+          issuedBooks: bookFee.books,
+          paymentMethod: 'Cash',
+          updatedBy: seededUsers.BOOK_DEPT._id
+        });
+
+        // Create Book Ledger Payment entry
+        await models.Payment.create({
+          receiptNumber: `REC${new Date().getFullYear()}00020${student.rollNumber}`,
+          student: student._id,
+          feeType: 'Book',
+          amount: bookFee.amount,
+          paymentDate: new Date(Date.now() - 3600000 * 24 * 2), // 2 days ago
+          paymentMethod: 'Cash',
+          transactionRef: '',
+          staffName: seededUsers.BOOK_DEPT.name
+        });
+
+        // Request approvals trace
+        await models.RequestQueue.create({
+          student: student._id,
+          department: 'BOOK_DEPT',
+          status: 'APPROVED',
+          remarks: 'Books issued.',
+          actionedAt: new Date(Date.now() - 3600000 * 24 * 2),
+          actionedBy: seededUsers.BOOK_DEPT._id
+        });
+
+        // Audit logs
+        await models.AuditLog.create({
+          user: 'books',
+          action: 'BOOK_DISTRIBUTION_SUBMITTED',
+          student: student._id,
+          details: `Issued books checklist and processed book fee of ₹${bookFee.amount} for ${student.name}.`
+        });
+
+        // If Uniform is pending
+        if (studentFlds.clearanceStatus === 'UNIFORM_PENDING') {
+          await models.RequestQueue.create({
+            student: student._id,
+            department: 'UNIFORM_DEPT',
+            status: 'PENDING',
+            remarks: 'Books cleared. Routed automatically.'
+          });
+        }
+      }
+
+      // 3. Uniform Clearance Seeding
+      if (uniformFee) {
+        // Create Uniform Fee record
+        await models.UniformFee.create({
+          student: student._id,
+          feeAmount: uniformFee.amount,
+          amountPaid: uniformFee.paid,
+          balanceAmount: uniformFee.amount - uniformFee.paid,
+          status: uniformFee.status,
+          issuedItems: uniformFee.items,
+          paymentMethod: 'Card',
+          updatedBy: seededUsers.UNIFORM_DEPT._id
+        });
+
+        // Create Uniform Ledger Payment entry
+        await models.Payment.create({
+          receiptNumber: `REC${new Date().getFullYear()}00030${student.rollNumber}`,
+          student: student._id,
+          feeType: 'Uniform',
+          amount: uniformFee.amount,
+          paymentDate: new Date(Date.now() - 3600000 * 24 * 1), // 1 day ago
+          paymentMethod: 'Card',
+          transactionRef: 'CRD_982341',
+          staffName: seededUsers.UNIFORM_DEPT.name
+        });
+
+        // Request approvals trace
+        await models.RequestQueue.create({
+          student: student._id,
+          department: 'UNIFORM_DEPT',
+          status: 'APPROVED',
+          remarks: 'Uniform issued.',
+          actionedAt: new Date(Date.now() - 3600000 * 24 * 1),
+          actionedBy: seededUsers.UNIFORM_DEPT._id
+        });
+
+        // Audit logs
+        await models.AuditLog.create({
+          user: 'uniforms',
+          action: 'UNIFORM_DISTRIBUTION_SUBMITTED',
+          student: student._id,
+          details: `Issued uniform items checklist and processed uniform fee of ₹${uniformFee.amount} for ${student.name}.`
+        });
+
+        await models.AuditLog.create({
+          user: 'SYSTEM',
+          action: 'STUDENT_WORKFLOW_COMPLETED',
+          student: student._id,
+          details: `Student ${student.name} clearance completed. Marked COMPLETED.`
+        });
+      }
+    }
+
+    // Seed some general notifications
+    console.log('Seeding notifications...');
+    await models.Notification.create({
+      title: 'Welcome to clearance dashboard',
+      message: 'System initialization complete. Clearance workflows are live.',
+      roles: ['SUPER_ADMIN', 'TUITION_DEPT', 'BOOK_DEPT', 'UNIFORM_DEPT']
+    });
+
+    await models.Notification.create({
+      title: 'New Student Registered',
+      message: 'Arjun Sharma (STU20260001) registered. Tuition fee clearance pending.',
+      roles: ['SUPER_ADMIN', 'TUITION_DEPT']
+    });
+
+    await models.Notification.create({
+      title: 'New Book Clearance Request',
+      message: 'Priya Patel (STU20260002) has cleared tuition fees and is queued for book collection.',
+      roles: ['SUPER_ADMIN', 'BOOK_DEPT']
+    });
+
     console.log('==================================================');
-    console.log('DATABASE SEEDING SUCCESSFUL (CORE CONFIGS & STAFF USERS ONLY)');
+    console.log('DATABASE SEEDING SUCCESSFUL');
     console.log(`Seeded User Login Credentials:`);
     console.log(`- Super Admin: admin / ${defaultPassword}`);
     console.log(`- Tuition Department: tuition / ${defaultPassword}`);
@@ -313,6 +683,12 @@ const seed = async () => {
 
   } catch (error) {
     console.error('CRITICAL: Seeding failed:', error);
+  } finally {
+    const mongoose = require('mongoose');
+    if (mongoose.connection) {
+      await mongoose.connection.close();
+    }
+    process.exit(0);
   }
 };
 
