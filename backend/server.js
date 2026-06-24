@@ -19,10 +19,13 @@ const studentRoutes = require('./routes/students');
 const tuitionRoutes = require('./routes/feesTuition');
 const bookRoutes = require('./routes/feesBooks');
 const uniformRoutes = require('./routes/feesUniforms');
+const transportationRoutes = require('./routes/feesTransportation');
+const lunchRoutes = require('./routes/feesLunch');
 const reportsRoutes = require('./routes/reports');
 const dashboardRoutes = require('./routes/dashboard');
 const auditRoutes = require('./routes/audit');
 const notificationRoutes = require('./routes/notifications');
+const inventoryRoutes = require('./routes/inventory');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -31,10 +34,13 @@ app.use('/api/students', studentRoutes);
 app.use('/api/fees/tuition', tuitionRoutes);
 app.use('/api/fees/books', bookRoutes);
 app.use('/api/fees/uniforms', uniformRoutes);
+app.use('/api/fees/transportation', transportationRoutes);
+app.use('/api/fees/lunch', lunchRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // Base route
 app.get('/', (req, res) => {

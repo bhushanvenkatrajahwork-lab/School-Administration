@@ -22,7 +22,10 @@ import {
   BookOpen,
   Shirt,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Bus,
+  Utensils,
+  Boxes
 } from 'lucide-react';
 
 export default function AppShell({ children, activeTab, setActiveTab, onOpenStudentHistory }) {
@@ -108,8 +111,11 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
     if (role === 'SUPER_ADMIN') {
       return [
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'inventory', label: 'Inventory Desk', icon: Boxes },
         { id: 'students', label: 'Student Directory', icon: Users },
         { id: 'configs', label: 'School & Catalog', icon: School },
+        { id: 'transport-overview', label: 'Transportation', icon: Bus },
+        { id: 'lunch-overview', label: 'Lunch Facility', icon: Utensils },
         { id: 'history', label: 'Student Histories', icon: History },
         { id: 'reports', label: 'Analytics Reports', icon: FileSpreadsheet },
         { id: 'users', label: 'Staff Directory', icon: UserCheck },
@@ -124,13 +130,17 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
     } else if (role === 'BOOK_DEPT') {
       return [
         { id: 'book-overview', label: 'Library Dashboard', icon: LayoutDashboard },
+        { id: 'inventory', label: 'Inventory Desk', icon: Boxes },
         { id: 'book-queue', label: 'Clearance Queue', icon: BookOpen },
         { id: 'history', label: 'Clearance History', icon: History },
       ];
     } else if (role === 'UNIFORM_DEPT') {
       return [
         { id: 'uniform-overview', label: 'Uniform Dashboard', icon: LayoutDashboard },
+        { id: 'inventory', label: 'Inventory Desk', icon: Boxes },
         { id: 'uniform-queue', label: 'Clearance Queue', icon: Shirt },
+        { id: 'transport-overview', label: 'Transportation', icon: Bus },
+        { id: 'lunch-overview', label: 'Lunch Facility', icon: Utensils },
         { id: 'history', label: 'Clearance History', icon: History },
       ];
     }

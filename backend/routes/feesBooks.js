@@ -177,6 +177,23 @@ router.post('/distribute', authenticate, authorize(['BOOK_DEPT', 'SUPER_ADMIN'])
     student.bookFee.paymentMethod = paymentMethod;
     student.bookFee.updatedBy = req.user.id;
 
+    // Decrement inventory stock levels for issued books
+    if (Array.isArray(issuedBooks)) {
+      for (const book of issuedBooks) {
+        if (book) {
+          const invItem = await models.Inventory.findOne({
+            itemType: 'Book',
+            name: book,
+            size: 'N/A'
+          });
+          if (invItem) {
+            const newQty = Math.max(0, (Number(invItem.quantity) || 0) - 1);
+            await models.Inventory.findByIdAndUpdate(invItem._id, { quantity: newQty });
+          }
+        }
+      }
+    }
+
     // Transition student clearance status to Books Cleared -> Uniform Pending
     student.clearanceStatus = 'UNIFORM_PENDING';
 

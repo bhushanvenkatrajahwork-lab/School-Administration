@@ -2,6 +2,7 @@
   {
     "_id": "gb6l4ghmxmqewrzd3",
     "createdAt": "2026-06-15T07:45:30.567Z",
+    "schoolType": "CBSE",
     "class": "Class 10",
     "items": [
       "Shirt (Boys/Girls)",
@@ -18,6 +19,7 @@
   {
     "_id": "usfwa7h3bmqewrzdu",
     "createdAt": "2026-06-15T07:45:30.594Z",
+    "schoolType": "CBSE",
     "class": "Class 9",
     "items": [
       "Shirt (Boys/Girls)",
@@ -34,7 +36,8 @@
   {
     "_id": "ioadjdy3pmqewrzeu",
     "createdAt": "2026-06-15T07:45:30.630Z",
-    "class": "Class X",
+    "schoolType": "ICSE",
+    "class": "Class 10",
     "items": [
       "Shirt (Boys/Girls)",
       "Pant/Skirt",

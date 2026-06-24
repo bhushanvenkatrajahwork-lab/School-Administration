@@ -34,7 +34,13 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
     admissionNumber: '', name: '', gender: 'Male', dob: '', schoolType: 'CBSE',
     class: '', section: '', rollNumber: '', fatherName: '', motherName: '',
     parentMobile: '', email: '', address: '', academicYear: '2026-2027',
-    tuitionFeeAmount: ''
+    tuitionFeeAmount: '',
+    transportEnrollment: 'No', transportType: 'Parent Transport', busRoute: '',
+    busNumber: '', boardingPoint: '', transportRemarks: '',
+    pickupLocation: '', dropLocation: '',
+    outsourcedName: '', outsourcedContactPerson: '', outsourcedContactNumber: '',
+    outsourcedRoute: '', outsourcedPickup: '', outsourcedDrop: '',
+    lunchEnrollment: 'Not Taking School Lunch', lunchPeriod: 'Monthly'
   });
   const [studentFormError, setStudentFormError] = useState('');
   
@@ -61,7 +67,17 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
   // Uniform Config states
   const [uniformsConfig, setUniformsConfig] = useState([]);
   const [showAddUniformConfig, setShowAddUniformConfig] = useState(false);
-  const [uniformConfigForm, setUniformConfigForm] = useState({ class: '', items: 'Shirt, Pant, Tie, Belt, Socks', feeAmount: '' });
+  const [uniformConfigForm, setUniformConfigForm] = useState({ schoolType: 'CBSE', class: '', items: 'Shirt, Pant, Tie, Belt, Socks', feeAmount: '' });
+
+  // Transport Config states
+  const [transportConfigs, setTransportConfigs] = useState([]);
+  const [showAddTransportConfig, setShowAddTransportConfig] = useState(false);
+  const [transportConfigForm, setTransportConfigForm] = useState({ route: '', feeAmount: '', busNumber: '' });
+
+  // Lunch Config states
+  const [lunchConfigs, setLunchConfigs] = useState([]);
+  const [showAddLunchConfig, setShowAddLunchConfig] = useState(false);
+  const [lunchConfigForm, setLunchConfigForm] = useState({ period: 'Monthly', feeAmount: '' });
 
   // User Management states
   const [usersList, setUsersList] = useState([]);
@@ -72,6 +88,26 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
   // Audit Logs state
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
+
+  // Report Filter states
+  const [reportFilterBoard, setReportFilterBoard] = useState('');
+  const [reportFilterClass, setReportFilterClass] = useState('');
+  const [reportFilterSection, setReportFilterSection] = useState('');
+
+  // Filter classes by selected board for report exports
+  const getReportFilteredClasses = () => {
+    if (!reportFilterBoard) return classes;
+    return classes.filter(c => c.schoolType === reportFilterBoard);
+  };
+
+  // Filter sections by selected class for report exports
+  const getReportFilteredSections = () => {
+    if (!reportFilterClass) return [];
+    const configs = classes.filter(c => c.name === reportFilterClass && (!reportFilterBoard || c.schoolType === reportFilterBoard));
+    const allSections = new Set();
+    configs.forEach(c => c.sections.forEach(s => allSections.add(s)));
+    return Array.from(allSections).sort();
+  };
 
   // Filter classes by selected board
   const getDirectoryFilteredClasses = () => {
@@ -139,9 +175,13 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
       const cls = await api.get('/classes');
       const bks = await api.get('/classes/books');
       const uni = await api.get('/classes/uniforms');
+      const trn = await api.get('/classes/transportation');
+      const ln = await api.get('/classes/lunch');
       setClasses(cls);
       setBooksConfig(bks);
       setUniformsConfig(uni);
+      setTransportConfigs(trn || []);
+      setLunchConfigs(ln || []);
     } catch (err) {
       console.error(err);
     }
@@ -234,7 +274,24 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
 
   const handleExportCSV = async (type) => {
     try {
-      await api.download(`/reports/export/csv?type=${type}`, `${type}_clearance_report.csv`);
+      let url = `/reports/export/csv?type=${type}`;
+      let filenameParts = [type];
+      
+      if (reportFilterBoard) {
+        url += `&schoolType=${reportFilterBoard}`;
+        filenameParts.push(reportFilterBoard);
+      }
+      if (reportFilterClass) {
+        url += `&class=${encodeURIComponent(reportFilterClass)}`;
+        filenameParts.push(reportFilterClass.replace(/\s+/g, '_'));
+      }
+      if (reportFilterSection) {
+        url += `&section=${encodeURIComponent(reportFilterSection)}`;
+        filenameParts.push(reportFilterSection);
+      }
+      
+      const filename = `${filenameParts.join('_')}_report.csv`;
+      await api.download(url, filename);
     } catch (err) {
       alert('CSV Export failed: ' + err.message);
     }
@@ -271,7 +328,13 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
         admissionNumber: '', name: '', gender: 'Male', dob: '', schoolType: 'CBSE',
         class: '', section: '', rollNumber: '', fatherName: '', motherName: '',
         parentMobile: '', email: '', address: '', academicYear: '2026-2027',
-        tuitionFeeAmount: ''
+        tuitionFeeAmount: '',
+        transportEnrollment: 'No', transportType: 'Parent Transport', busRoute: '',
+        busNumber: '', boardingPoint: '', transportRemarks: '',
+        pickupLocation: '', dropLocation: '',
+        outsourcedName: '', outsourcedContactPerson: '', outsourcedContactNumber: '',
+        outsourcedRoute: '', outsourcedPickup: '', outsourcedDrop: '',
+        lunchEnrollment: 'Not Taking School Lunch', lunchPeriod: 'Monthly'
       });
       setShowAddStudent(false);
       fetchStudents();
@@ -321,11 +384,44 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
     try {
       const parsedItems = uniformConfigForm.items.split(',').map(i => i.trim()).filter(Boolean);
       await api.post('/classes/uniforms', {
+        schoolType: uniformConfigForm.schoolType,
         class: uniformConfigForm.class,
         items: parsedItems,
         feeAmount: Number(uniformConfigForm.feeAmount)
       });
+      setUniformConfigForm({ schoolType: 'CBSE', class: '', items: 'Shirt, Pant, Tie, Belt, Socks', feeAmount: '' });
       setShowAddUniformConfig(false);
+      fetchConfigs();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAddTransportConfigSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/classes/transportation', {
+        route: transportConfigForm.route,
+        busNumber: transportConfigForm.busNumber,
+        feeAmount: Number(transportConfigForm.feeAmount)
+      });
+      setShowAddTransportConfig(false);
+      setTransportConfigForm({ route: '', feeAmount: '', busNumber: '' });
+      fetchConfigs();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAddLunchConfigSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/classes/lunch', {
+        period: lunchConfigForm.period,
+        feeAmount: Number(lunchConfigForm.feeAmount)
+      });
+      setShowAddLunchConfig(false);
+      setLunchConfigForm({ period: 'Monthly', feeAmount: '' });
       fetchConfigs();
     } catch (err) {
       alert(err.message);
@@ -348,7 +444,22 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
       'Parent Email',
       'Residential Address',
       'Academic Year (e.g. 2026-2027)',
-      'Tuition Fee Amount (Optional)'
+      'Tuition Fee Amount (Optional)',
+      'Transport Enrollment (Yes/No)',
+      'Transport Type (School Bus/Parent Transport/Outsourced Transport)',
+      'Bus Route',
+      'Pickup Location',
+      'Drop Location',
+      'Boarding Point',
+      'Transport Remarks',
+      'Outsourced Name',
+      'Outsourced Contact Person',
+      'Outsourced Contact Number',
+      'Outsourced Route',
+      'Outsourced Pickup',
+      'Outsourced Drop',
+      'Lunch Enrollment (Lunch at School/Not Taking School Lunch)',
+      'Lunch Period (Monthly/Quarterly/Annual)'
     ];
     
     const sampleData = [
@@ -432,14 +543,45 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
           'Parent Email': 'email',
           'Residential Address': 'address',
           'Academic Year (e.g. 2026-2027)': 'academicYear',
-          'Tuition Fee Amount (Optional)': 'tuitionFeeAmount'
+          'Tuition Fee Amount (Optional)': 'tuitionFeeAmount',
+          'Transport Enrollment (Yes/No)': 'transportEnrollment',
+          'Transport Type (School Bus/Parent Transport/Outsourced Transport)': 'transportType',
+          'Bus Route': 'busRoute',
+          'Pickup Location': 'pickupLocation',
+          'Drop Location': 'dropLocation',
+          'Boarding Point': 'boardingPoint',
+          'Transport Remarks': 'transportRemarks',
+          'Outsourced Name': 'outsourcedName',
+          'Outsourced Contact Person': 'outsourcedContactPerson',
+          'Outsourced Contact Number': 'outsourcedContactNumber',
+          'Outsourced Route': 'outsourcedRoute',
+          'Outsourced Pickup': 'outsourcedPickup',
+          'Outsourced Drop': 'outsourcedDrop',
+          'Lunch Enrollment (Lunch at School/Not Taking School Lunch)': 'lunchEnrollment',
+          'Lunch Period (Monthly/Quarterly/Annual)': 'lunchPeriod'
         };
 
-        // Validate headers are present in the sheet
+        const requiredHeaders = [
+          'Admission Number',
+          'Student Name',
+          'Gender',
+          'Date of Birth (YYYY-MM-DD)',
+          'School Board (CBSE/ICSE)',
+          'Class',
+          'Section',
+          'Roll Number',
+          'Father Name',
+          'Mother Name',
+          'Parent Mobile',
+          'Residential Address',
+          'Academic Year (e.g. 2026-2027)'
+        ];
+
+        // Validate critical headers are present in the sheet
         const excelKeys = Object.keys(jsonData[0]);
-        const missingHeaders = Object.keys(headerMapping).filter(h => !excelKeys.includes(h));
-        if (missingHeaders.length > 5) { // Allow slight format mismatch but block totally unrelated spreadsheets
-          setBulkError(`Format mismatch. Missing spreadsheet columns: ${missingHeaders.slice(0, 3).join(', ')}...`);
+        const missingCritical = requiredHeaders.filter(h => !excelKeys.includes(h));
+        if (missingCritical.length > 0) {
+          setBulkError(`Format mismatch. Missing critical spreadsheet columns: ${missingCritical.slice(0, 3).join(', ')}...`);
           return;
         }
 
@@ -465,6 +607,11 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
 
             student[key] = val;
           });
+
+          // Optional field fallbacks for missing columns
+          if (!student.transportEnrollment) student.transportEnrollment = 'No';
+          if (!student.transportType) student.transportType = 'Parent Transport';
+          if (!student.lunchEnrollment) student.lunchEnrollment = 'Not Taking School Lunch';
 
           const requiredFields = {
             admissionNumber: 'Admission Number',
@@ -1228,6 +1375,17 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
             {showAddUniformConfig && (
               <form onSubmit={handleAddUniformConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-3 text-xs">
                 <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">School Board</label>
+                  <select
+                    value={uniformConfigForm.schoolType}
+                    onChange={(e) => setUniformConfigForm(prev => ({ ...prev, schoolType: e.target.value, class: '' }))}
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5"
+                  >
+                    <option value="CBSE">CBSE</option>
+                    <option value="ICSE">ICSE</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">Class Name</label>
                   <select
                     required
@@ -1236,9 +1394,11 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
                     className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 cursor-pointer text-slate-850"
                   >
                     <option value="">-- Select Class --</option>
-                    {Array.from(new Set(classes.map(c => c.name))).map((className, idx) => (
-                      <option key={idx} value={className}>{className}</option>
-                    ))}
+                    {classes
+                      .filter(c => c.schoolType === uniformConfigForm.schoolType)
+                      .map(c => (
+                        <option key={c._id} value={c.name}>{c.name}</option>
+                      ))}
                   </select>
                 </div>
                 <div>
@@ -1272,10 +1432,128 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
               {uniformsConfig.map(u => (
                 <div key={u._id} className="py-3 text-xs space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-800">{u.class}</span>
+                    <span className="font-bold text-slate-800">{u.schoolType} - {u.class}</span>
                     <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/50 px-2 py-0.5 rounded-lg">₹{u.feeAmount}</span>
                   </div>
                   <p className="text-[10px] text-slate-500 font-medium leading-relaxed">Items: {u.items?.join(', ')}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Transport configs */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <Building className="h-4.5 w-4.5 text-slate-500" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Transport Routes</h3>
+              </div>
+              <button onClick={() => setShowAddTransportConfig(true)} className="p-1 text-indigo-650 hover:bg-indigo-50 rounded-lg cursor-pointer">
+                <Plus className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            {showAddTransportConfig && (
+              <form onSubmit={handleAddTransportConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-3 text-xs">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-550 mb-1">Route Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={transportConfigForm.route}
+                    onChange={(e) => setTransportConfigForm(prev => ({ ...prev, route: e.target.value }))}
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
+                    placeholder="e.g. Route D"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-550 mb-1">Bus Number</label>
+                  <input
+                    type="text"
+                    value={transportConfigForm.busNumber}
+                    onChange={(e) => setTransportConfigForm(prev => ({ ...prev, busNumber: e.target.value }))}
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
+                    placeholder="e.g. BUS-D404"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-550 mb-1">Route Fee amount (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={transportConfigForm.feeAmount}
+                    onChange={(e) => setTransportConfigForm(prev => ({ ...prev, feeAmount: e.target.value }))}
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
+                  />
+                </div>
+                <div className="flex space-x-2 pt-2">
+                  <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold">Save</button>
+                  <button type="button" onClick={() => setShowAddTransportConfig(false)} className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
+                </div>
+              </form>
+            )}
+
+            <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1">
+              {transportConfigs.map(t => (
+                <div key={t._id} className="py-2.5 flex justify-between items-center text-xs">
+                  <div>
+                    <span className="font-bold text-slate-800">{t.route}</span>
+                    <span className="ml-2 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[9px] font-bold">{t.busNumber || 'N/A'}</span>
+                  </div>
+                  <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/50 px-2 py-0.5 rounded-lg">₹{t.feeAmount}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Lunch configs */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-premium space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <FolderKanban className="h-4.5 w-4.5 text-slate-500" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Lunch Plans</h3>
+              </div>
+              <button onClick={() => setShowAddLunchConfig(true)} className="p-1 text-indigo-650 hover:bg-indigo-50 rounded-lg cursor-pointer">
+                <Plus className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            {showAddLunchConfig && (
+              <form onSubmit={handleAddLunchConfigSubmit} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-3 text-xs">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-550 mb-1">Period Plan</label>
+                  <select
+                    value={lunchConfigForm.period}
+                    onChange={(e) => setLunchConfigForm(prev => ({ ...prev, period: e.target.value }))}
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
+                  >
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quarterly">Quarterly</option>
+                    <option value="Annual">Annual</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-550 mb-1">Lunch Fee amount (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={lunchConfigForm.feeAmount}
+                    onChange={(e) => setLunchConfigForm(prev => ({ ...prev, feeAmount: e.target.value }))}
+                    className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 focus:outline-none"
+                  />
+                </div>
+                <div className="flex space-x-2 pt-2">
+                  <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold">Save</button>
+                  <button type="button" onClick={() => setShowAddLunchConfig(false)} className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
+                </div>
+              </form>
+            )}
+
+            <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1">
+              {lunchConfigs.map(l => (
+                <div key={l._id} className="py-2.5 flex justify-between items-center text-xs">
+                  <span className="font-bold text-slate-800">{l.period} Plan</span>
+                  <span className="font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/50 px-2 py-0.5 rounded-lg">₹{l.feeAmount}</span>
                 </div>
               ))}
             </div>
@@ -1292,6 +1570,56 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
           <div>
             <h3 className="text-sm font-bold text-slate-900">Operational Analytics Exporters</h3>
             <p className="text-[11px] text-slate-400 mt-0.5">Download current databases and collections ledgers in CSV spreadsheets</p>
+          </div>
+
+          {/* Exporter Filters */}
+          <div className="bg-slate-50/50 border border-slate-200/60 p-5 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-4.5 text-xs">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">School Board</label>
+              <select
+                value={reportFilterBoard}
+                onChange={(e) => {
+                  setReportFilterBoard(e.target.value);
+                  setReportFilterClass('');
+                  setReportFilterSection('');
+                }}
+                className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 cursor-pointer text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">All Boards</option>
+                <option value="CBSE">CBSE (Central Board)</option>
+                <option value="ICSE">ICSE (Indian Certificate)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Class Name</label>
+              <select
+                value={reportFilterClass}
+                onChange={(e) => {
+                  setReportFilterClass(e.target.value);
+                  setReportFilterSection('');
+                }}
+                className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 cursor-pointer text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">All Classes</option>
+                {Array.from(new Set(getReportFilteredClasses().map(c => c.name))).map((className, idx) => (
+                  <option key={idx} value={className}>{className}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Section</label>
+              <select
+                value={reportFilterSection}
+                onChange={(e) => setReportFilterSection(e.target.value)}
+                disabled={!reportFilterClass}
+                className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 cursor-pointer text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">All Sections</option>
+                {getReportFilteredSections().map((sec, idx) => (
+                  <option key={idx} value={sec}>{sec}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1843,6 +2171,184 @@ export default function AdminDashboard({ activeTab, onOpenStudentHistory }) {
                   rows={2}
                   placeholder="Street address, City, Pin"
                 />
+              </div>
+
+              {/* Transportation Fields */}
+              <div className="space-y-4 border-t border-slate-100 pt-4">
+                <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider text-[10px]">Transportation Enrollment</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Enrollment Status</label>
+                    <select
+                      value={studentForm.transportEnrollment}
+                      onChange={(e) => setStudentForm(prev => ({ ...prev, transportEnrollment: e.target.value }))}
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+                    >
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </select>
+                  </div>
+
+                  {studentForm.transportEnrollment === 'Yes' && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Transport Type</label>
+                      <select
+                        value={studentForm.transportType}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, transportType: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+                      >
+                        <option value="School Bus">School Bus</option>
+                        <option value="Parent Transport">Parent Transport</option>
+                        <option value="Outsourced Transport">Outsourced Transport</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {studentForm.transportEnrollment === 'Yes' && studentForm.transportType === 'School Bus' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Bus Route</label>
+                      <select
+                        value={studentForm.busRoute}
+                        onChange={(e) => {
+                          const routeName = e.target.value;
+                          const routeConfig = transportConfigs.find(c => c.route === routeName);
+                          setStudentForm(prev => ({ 
+                            ...prev, 
+                            busRoute: routeName,
+                            busNumber: routeConfig ? routeConfig.busNumber : '' 
+                          }));
+                        }}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+                      >
+                        <option value="">-- Select Route --</option>
+                        {transportConfigs.map((t, idx) => (
+                          <option key={idx} value={t.route}>{t.route}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Bus Number</label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={studentForm.busNumber}
+                        className="w-full border border-slate-200 bg-slate-50 rounded-xl px-3 py-1.5 focus:outline-none cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Pickup Location</label>
+                      <input
+                        type="text"
+                        value={studentForm.pickupLocation}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, pickupLocation: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Drop Location</label>
+                      <input
+                        type="text"
+                        value={studentForm.dropLocation}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, dropLocation: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Boarding Point</label>
+                      <input
+                        type="text"
+                        value={studentForm.boardingPoint}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, boardingPoint: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Transport Remarks</label>
+                      <input
+                        type="text"
+                        value={studentForm.transportRemarks}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, transportRemarks: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {studentForm.transportEnrollment === 'Yes' && studentForm.transportType === 'Outsourced Transport' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Outsourced Provider Name</label>
+                      <input
+                        type="text"
+                        value={studentForm.outsourcedName}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, outsourcedName: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Contact Person</label>
+                      <input
+                        type="text"
+                        value={studentForm.outsourcedContactPerson}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, outsourcedContactPerson: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Contact Number</label>
+                      <input
+                        type="text"
+                        value={studentForm.outsourcedContactNumber}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, outsourcedContactNumber: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Outsourced Route</label>
+                      <input
+                        type="text"
+                        value={studentForm.outsourcedRoute}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, outsourcedRoute: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Lunch Fields */}
+              <div className="space-y-4 border-t border-slate-100 pt-4">
+                <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider text-[10px]">Lunch Facility</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Lunch Enrollment</label>
+                    <select
+                      value={studentForm.lunchEnrollment}
+                      onChange={(e) => setStudentForm(prev => ({ ...prev, lunchEnrollment: e.target.value }))}
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+                    >
+                      <option value="Not Taking School Lunch">Not Taking School Lunch</option>
+                      <option value="Lunch at School">Lunch at School</option>
+                    </select>
+                  </div>
+
+                  {studentForm.lunchEnrollment === 'Lunch at School' && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Lunch Plan Period</label>
+                      <select
+                        value={studentForm.lunchPeriod}
+                        onChange={(e) => setStudentForm(prev => ({ ...prev, lunchPeriod: e.target.value }))}
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Annual">Annual</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {studentFormError && <p className="text-xs text-rose-500 font-bold">{studentFormError}</p>}
