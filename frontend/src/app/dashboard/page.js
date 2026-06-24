@@ -12,6 +12,7 @@ import TransportationDashboard from '../../components/TransportationDashboard';
 import LunchDashboard from '../../components/LunchDashboard';
 import StudentHistory from '../../components/StudentHistory';
 import StudentHistoryRegistry from '../../components/StudentHistoryRegistry';
+import InventoryDashboard from '../../components/InventoryDashboard';
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -69,6 +70,10 @@ export default function DashboardPage() {
           onOpenStudentHistory={(id) => setViewStudentHistoryId(id)} 
         />
       );
+    }
+
+    if (activeTab === 'inventory') {
+      return <InventoryDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
     }
 
     const role = user.role;

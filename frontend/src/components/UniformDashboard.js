@@ -30,6 +30,7 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
   const [classItems, setClassItems] = useState([]);
   const [uniformFeeAmount, setUniformFeeAmount] = useState(0);
   const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedSizes, setSelectedSizes] = useState({});
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -253,6 +254,13 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
       setUniformFeeAmount(config.feeAmount || 2500);
       setSelectedItems(config.items || []);
 
+      // Initialize selected sizes map
+      const initialSizes = {};
+      (config.items || []).forEach(item => {
+        initialSizes[item] = '32';
+      });
+      setSelectedSizes(initialSizes);
+
       // 2. Fetch all transportation routes and lunch periods configurations
       const routes = await api.get('/classes/transportation');
       setAllRoutesList(routes || []);
@@ -303,10 +311,15 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
     setFormError('');
 
     try {
+      const formattedItems = selectedItems.map(item => ({
+        name: item,
+        size: selectedSizes[item] || '32'
+      }));
+
       const res = await api.post('/fees/uniforms/distribute', {
         studentId: activeRequest.student._id,
         requestId: activeRequest._id,
-        itemsIssued: selectedItems,
+        itemsIssued: formattedItems,
         feeAmount: uniformFeeAmount,
         amountPaid: Number(amountPaid),
         paymentMethod,
@@ -931,23 +944,46 @@ export default function UniformDashboard({ activeTab, setActiveTab }) {
                       classItems.map((item, idx) => {
                         const isChecked = selectedItems.includes(item);
                         return (
-                          <button
-                            type="button"
+                          <div
                             key={idx}
-                            onClick={() => handleItemToggle(item)}
-                            className={`flex items-center space-x-2.5 p-2 rounded-lg text-xs font-medium text-left border cursor-pointer transition-colors ${
+                            className={`flex items-center justify-between p-2 rounded-lg text-xs font-medium border transition-colors ${
                               isChecked 
-                                ? 'bg-rose-550/10 text-rose-800 border-rose-300 shadow-sm' 
-                                : 'bg-white text-slate-605 border-slate-200 hover:bg-slate-50'
+                                ? 'bg-rose-500/5 text-rose-800 border-rose-250 shadow-sm' 
+                                : 'bg-white text-slate-600 border-slate-200'
                             }`}
                           >
-                            <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 ${
-                              isChecked ? 'bg-rose-600 border-rose-600 text-white' : 'border-slate-300 bg-white'
-                            }`}>
-                              {isChecked && <Check className="h-3 w-3" />}
-                            </div>
-                            <span className="truncate">{item}</span>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleItemToggle(item)}
+                              className="flex items-center space-x-2.5 text-left cursor-pointer flex-1 focus:outline-none"
+                            >
+                              <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 ${
+                                isChecked ? 'bg-rose-600 border-rose-600 text-white' : 'border-slate-300 bg-white'
+                              }`}>
+                                {isChecked && <Check className="h-3 w-3" />}
+                              </div>
+                              <span className="truncate text-slate-750">{item}</span>
+                            </button>
+                            
+                            {isChecked && (
+                              <select
+                                value={selectedSizes[item] || '32'}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedSizes(prev => ({
+                                    ...prev,
+                                    [item]: e.target.value
+                                  }));
+                                }}
+                                className="ml-2 border border-slate-250 bg-white text-slate-705 font-bold px-1.5 py-0.5 rounded text-[10px] focus:outline-none focus:border-rose-600 cursor-pointer"
+                              >
+                                {['28', '30', '32', '34', '36', 'N/A'].map(sz => (
+                                  <option key={sz} value={sz}>{sz}</option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
                         );
                       })
                     )}

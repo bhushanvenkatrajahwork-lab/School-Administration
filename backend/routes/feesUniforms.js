@@ -180,14 +180,55 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
 
     const oldUniformFee = JSON.parse(JSON.stringify(student.uniformFee || {}));
 
+    // Initialize nested schemas if missing/null to avoid TypeErrors
+    if (!student.uniformFee) student.uniformFee = {};
+    if (!student.transportFee) student.transportFee = {};
+    if (!student.lunchFee) student.lunchFee = {};
+
     // Update nested Uniform Fee details inside the Student document
+    const issuedItemsStrings = Array.isArray(itemsIssued) 
+      ? itemsIssued.map(item => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object') {
+            return `${item.name} (Size: ${item.size || 'N/A'})`;
+          }
+          return '';
+        }).filter(Boolean)
+      : [];
+
     student.uniformFee.feeAmount = totalFee;
     student.uniformFee.amountPaid = amtPaid;
     student.uniformFee.balanceAmount = Math.max(0, balance);
     student.uniformFee.status = status;
-    student.uniformFee.issuedItems = itemsIssued;
+    student.uniformFee.issuedItems = issuedItemsStrings;
     student.uniformFee.paymentMethod = paymentMethod;
     student.uniformFee.updatedBy = req.user.id;
+
+    // Decrement inventory stock levels for issued items
+    if (Array.isArray(itemsIssued)) {
+      for (const item of itemsIssued) {
+        let name = '';
+        let size = 'N/A';
+        if (typeof item === 'string') {
+          name = item;
+        } else if (item && typeof item === 'object') {
+          name = item.name;
+          size = item.size || 'N/A';
+        }
+
+        if (name) {
+          const invItem = await models.Inventory.findOne({
+            itemType: 'Uniform',
+            name,
+            size
+          });
+          if (invItem) {
+            const newQty = Math.max(0, (Number(invItem.quantity) || 0) - 1);
+            await models.Inventory.findByIdAndUpdate(invItem._id, { quantity: newQty });
+          }
+        }
+      }
+    }
 
     // Save optional services choices if provided
     if (transportEnrollment !== undefined) {
@@ -270,7 +311,18 @@ router.post('/distribute', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN
     let payment = null;
     if (amtPaid > 0) {
       const pCount = await models.Payment.countDocuments();
-      const receiptNumber = `REC${new Date().getFullYear()}${String(pCount + 1).padStart(6, '0')}`;
+      let receiptNumber;
+      let isUnique = false;
+      let offset = 0;
+      while (!isUnique) {
+        receiptNumber = `REC${new Date().getFullYear()}${String(pCount + 1 + offset).padStart(6, '0')}`;
+        const existingPayment = await models.Payment.findOne({ receiptNumber });
+        if (!existingPayment) {
+          isUnique = true;
+        } else {
+          offset++;
+        }
+      }
       
       payment = await models.Payment.create({
         receiptNumber,
@@ -356,11 +408,15 @@ router.post('/transport', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN'
   }
 
   try {
+    const amtPaid = Number(amountPaid);
     const student = await models.Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
     const oldStudent = JSON.parse(JSON.stringify(student));
     const oldTransportFee = JSON.parse(JSON.stringify(student.transportFee || {}));
+
+    // Initialize subdocument if missing/null to avoid TypeErrors
+    if (!student.transportFee) student.transportFee = {};
 
     // Update Transport Details & Fee inside the Student document
     if (transportEnrollment !== undefined) {
@@ -394,7 +450,6 @@ router.post('/transport', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN'
       student.boardingPoint = boardingPoint || '';
     } else {
       const totalFee = Number(feeAmount);
-      const amtPaid = Number(amountPaid);
       if (amtPaid !== totalFee) {
         return res.status(400).json({ message: 'Partial payment is not allowed. Full payment of transportation fees is required.' });
       }
@@ -439,7 +494,18 @@ router.post('/transport', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN'
     let payment = null;
     if (amtPaid > 0) {
       const pCount = await models.Payment.countDocuments();
-      const receiptNumber = `REC${new Date().getFullYear()}${String(pCount + 1).padStart(6, '0')}`;
+      let receiptNumber;
+      let isUnique = false;
+      let offset = 0;
+      while (!isUnique) {
+        receiptNumber = `REC${new Date().getFullYear()}${String(pCount + 1 + offset).padStart(6, '0')}`;
+        const existingPayment = await models.Payment.findOne({ receiptNumber });
+        if (!existingPayment) {
+          isUnique = true;
+        } else {
+          offset++;
+        }
+      }
       
       payment = await models.Payment.create({
         receiptNumber,
@@ -520,11 +586,15 @@ router.post('/lunch', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN']), 
   }
 
   try {
+    const amtPaid = Number(amountPaid);
     const student = await models.Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
     const oldStudent = JSON.parse(JSON.stringify(student));
     const oldLunchFee = JSON.parse(JSON.stringify(student.lunchFee || {}));
+
+    // Initialize subdocument if missing/null to avoid TypeErrors
+    if (!student.lunchFee) student.lunchFee = {};
 
     // Update Lunch Details & Fee inside the Student document
     if (lunchEnrollment !== undefined) {
@@ -552,7 +622,6 @@ router.post('/lunch', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN']), 
       }
     } else {
       const totalFee = Number(feeAmount);
-      const amtPaid = Number(amountPaid);
       if (amtPaid !== totalFee) {
         return res.status(400).json({ message: 'Partial payment is not allowed. Full payment of lunch fees is required.' });
       }
@@ -586,7 +655,18 @@ router.post('/lunch', authenticate, authorize(['UNIFORM_DEPT', 'SUPER_ADMIN']), 
     let payment = null;
     if (amtPaid > 0) {
       const pCount = await models.Payment.countDocuments();
-      const receiptNumber = `REC${new Date().getFullYear()}${String(pCount + 1).padStart(6, '0')}`;
+      let receiptNumber;
+      let isUnique = false;
+      let offset = 0;
+      while (!isUnique) {
+        receiptNumber = `REC${new Date().getFullYear()}${String(pCount + 1 + offset).padStart(6, '0')}`;
+        const existingPayment = await models.Payment.findOne({ receiptNumber });
+        if (!existingPayment) {
+          isUnique = true;
+        } else {
+          offset++;
+        }
+      }
       
       payment = await models.Payment.create({
         receiptNumber,

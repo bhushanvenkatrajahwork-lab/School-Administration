@@ -24,7 +24,8 @@ import {
   Calendar,
   AlertCircle,
   Bus,
-  Utensils
+  Utensils,
+  Boxes
 } from 'lucide-react';
 
 export default function AppShell({ children, activeTab, setActiveTab, onOpenStudentHistory }) {
@@ -110,6 +111,7 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
     if (role === 'SUPER_ADMIN') {
       return [
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'inventory', label: 'Inventory Desk', icon: Boxes },
         { id: 'students', label: 'Student Directory', icon: Users },
         { id: 'configs', label: 'School & Catalog', icon: School },
         { id: 'transport-overview', label: 'Transportation', icon: Bus },
@@ -134,6 +136,7 @@ export default function AppShell({ children, activeTab, setActiveTab, onOpenStud
     } else if (role === 'UNIFORM_DEPT') {
       return [
         { id: 'uniform-overview', label: 'Uniform Dashboard', icon: LayoutDashboard },
+        { id: 'inventory', label: 'Inventory Desk', icon: Boxes },
         { id: 'uniform-queue', label: 'Clearance Queue', icon: Shirt },
         { id: 'transport-overview', label: 'Transportation', icon: Bus },
         { id: 'lunch-overview', label: 'Lunch Facility', icon: Utensils },
